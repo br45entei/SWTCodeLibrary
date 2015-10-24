@@ -210,4 +210,24 @@ public class Functions {
 		return DatatypeConverter.parseHexBinary(s);
 	}
 	
+	public static final InterruptedException sleep(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch(InterruptedException e) {
+			return e;
+		}
+		return null;
+	}
+	
+	public static final InterruptedException sleep(double millis) {
+		long wholeNum = (long) millis;
+		int nanos = (int) Math.floor((millis - wholeNum) * 1000000);//(int) Math.floor((millis - wholeNum) / 1000000);
+		try {
+			Thread.sleep(wholeNum, nanos);
+		} catch(InterruptedException e) {
+			return e;
+		}
+		return null;
+	}
+	
 }

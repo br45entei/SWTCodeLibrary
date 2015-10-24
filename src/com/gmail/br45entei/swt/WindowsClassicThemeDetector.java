@@ -65,4 +65,5 @@ public class WindowsClassicThemeDetector {
 		// Wait until user presses ENTER in the console and then exit.
 		System.in.read();
 	}
+	
 }
