@@ -1,14 +1,21 @@
 package com.gmail.br45entei.swt;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.UUID;
 
 import javax.xml.bind.DatatypeConverter;
@@ -21,8 +28,14 @@ import org.eclipse.swt.widgets.Shell;
 /** @author Brian_Entei */
 public class Functions {
 	
-	private static final char[]		ILLEGAL_CHARACTERS				= {'\n', '\r', '\t', '\0', '\f', '`', '?', '*', '<', '>', '|', '\"'};
-	private static final String[]	ILLEGAL_CHARACTER_REPLACEMENTS	= {"", "", "", "", "", "&#96;", "", "", "&lt;", "&gt;", "", "&quot;"};
+	private static final char[]			ILLEGAL_CHARACTERS				= {'\n', '\r', '\t', '\0', '\f', '`', '?', '*', '<', '>', '|', '\"'};
+	private static final String[]		ILLEGAL_CHARACTER_REPLACEMENTS	= {"", "", "", "", "", "&#96;", "", "", "&lt;", "&gt;", "", "&quot;"};
+	
+	private static final SecureRandom	random							= new SecureRandom();
+	
+	public static final String nextSessionId() {
+		return new BigInteger(130, random).toString(32);
+	}
 	
 	/** @param str The string to convert
 	 * @return The string with HTML characters converted into normal characters */
@@ -228,6 +241,58 @@ public class Functions {
 			return e;
 		}
 		return null;
+	}
+	
+	public static final String stackTraceElementsToStr(StackTraceElement[] stackTraceElements) {
+		String str = "";
+		for(StackTraceElement stackTrace : stackTraceElements) {
+			str += (!stackTrace.toString().startsWith("Caused By") ? "     at " : "") + stackTrace.toString() + "\r\n";
+		}
+		return str;
+	}
+	
+	public static String throwableToStr(Throwable t) {
+		if(t == null) {
+			return "null";
+		}
+		String str = t.getClass().getName() + ": ";
+		if((t.getMessage() != null) && !t.getMessage().isEmpty()) {
+			str += t.getMessage() + "\r\n";
+		} else {
+			str += "\r\n";
+		}
+		str += stackTraceElementsToStr(t.getStackTrace());
+		if(t.getCause() != null) {
+			str += "Caused by:\r\n" + throwableToStr(t.getCause());
+		}
+		return str;
+	}
+	
+	public static final String readLine(InputStream in) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		int read;
+		while((read = in.read()) != -1) {
+			String s = new String(new byte[] {(byte) read});
+			if(s.equals("\n")) {
+				break;
+			}
+			baos.write(read);
+		}
+		if(baos.size() == 0) {
+			return null;
+		}
+		String rtrn = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
+	}
+	
+	/** @param getTimeOnly Whether or not time should be included but not date as
+	 *            well
+	 * @param fileSystemSafe Whether or not the returned string will be used in
+	 *            the making of a folder or file
+	 * @param milliseconds Whether or not the milliseconds should be included
+	 * @return The resulting string */
+	public static String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
+		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""))).format(new Date());
 	}
 	
 }
