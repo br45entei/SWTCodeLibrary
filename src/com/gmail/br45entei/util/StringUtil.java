@@ -3,11 +3,15 @@ package com.gmail.br45entei.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.net.URLDecoder;
-import java.text.DateFormat;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +32,43 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 /** @author Brian_Entei */
 public strictfp class StringUtil {
-	private static final Random	random	= new Random();
+	
+	public static final byte[] readFile(File file) {
+		if(file == null || !file.isFile()) {
+			return null;
+		}
+		try(FileInputStream in = new FileInputStream(file)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int read;
+			while((read = in.read()) != -1) {
+				baos.write(read);
+			}
+			return baos.toByteArray();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static final String readLine(InputStream in) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		int read;
+		while((read = in.read()) != -1) {
+			String s = new String(new byte[] {(byte) read});
+			if(s.equals("\n")) {
+				break;
+			}
+			baos.write(read);
+		}
+		if(baos.size() == 0 && read == -1) {
+			return null;
+		}
+		String rtrn = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
+	}
+	
+	private static final SecureRandom	secureRandom	= new SecureRandom();
+	private static final Random			random			= new Random();
 	
 	public static final int getRandomIntBetween(int min, int max) {
 		return random.nextInt(max - min) + min;
@@ -37,6 +77,10 @@ public strictfp class StringUtil {
 	public static final String		cacheValidatorTimePattern	= "EEE, dd MMM yyyy HH:mm:ss 'GMT'";
 	public static final Locale		cacheValidatorTimeLocale	= Locale.US;
 	public static final TimeZone	cacheValidatorTimeFormat	= TimeZone.getTimeZone("GMT");
+	
+	public static final String nextSessionId() {
+		return new BigInteger(130, secureRandom).toString(32);
+	}
 	
 	public static final void main(String[] args) {
 		/*String test = "<html>\r\n"//
@@ -93,6 +137,14 @@ public strictfp class StringUtil {
 		return count + 1;
 	}
 	
+	public static final String getSpecificLineInStr(String str, int line) {
+		String[] split = str.split(Pattern.quote("\n"));
+		if(split.length > line) {
+			return split[line];
+		}
+		return null;
+	}
+	
 	public static final int getNumOfLinesInStr(String str) {
 		int count = 0;
 		if(str == null) {
@@ -130,17 +182,8 @@ public strictfp class StringUtil {
 	 *            the making of a folder or file
 	 * @param milliseconds Whether or not the milliseconds should be included
 	 * @return The resulting string */
-	public static final String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
-		String timeAndDate = "";
-		DateFormat dateFormat;
-		if(getTimeOnly == false) {
-			dateFormat = new SimpleDateFormat(fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""));
-		} else {
-			dateFormat = new SimpleDateFormat(fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : ""));
-		}
-		Date date = new Date();
-		timeAndDate = dateFormat.format(date);
-		return timeAndDate;
+	public static String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
+		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""))).format(new Date());
 	}
 	
 	/** @param stackTraceElements The elements to convert

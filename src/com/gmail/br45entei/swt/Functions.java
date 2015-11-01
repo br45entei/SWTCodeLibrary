@@ -21,7 +21,9 @@ import java.util.UUID;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 
@@ -52,6 +54,33 @@ public class Functions {
 			i++;
 		}
 		return rtrn;
+	}
+	
+	public static final void setBoundsFor(Control control, Rectangle bounds) {
+		if(control == null || bounds == null) {
+			return;
+		}
+		if(!control.getBounds().equals(bounds)) {
+			control.setBounds(bounds);
+		}
+	}
+	
+	public static final void setLocationFor(Control control, Point loc) {
+		if(control == null || loc == null) {
+			return;
+		}
+		if(!control.getLocation().equals(loc)) {
+			control.setLocation(loc);
+		}
+	}
+	
+	public static final void setSizeFor(Control control, Point size) {
+		if(control == null || size == null) {
+			return;
+		}
+		if(!control.getSize().equals(size)) {
+			control.setSize(size);
+		}
 	}
 	
 	/** @param shell The shell to center */
