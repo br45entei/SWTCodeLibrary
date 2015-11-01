@@ -43,3 +43,7 @@ Temporary Items
 .apdisk
 .settings
 bin
+apacheHTTPClient
+apacheHTTPClientResources
+apacheHTTPCore
+apacheHTTPCoreResources
