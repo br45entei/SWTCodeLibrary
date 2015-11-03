@@ -24,13 +24,20 @@ public final class HttpDigestAuthorization {
 	
 	private final String					nonce;
 	
-	/** Default constructor to initialize stuff */
+	/** @param realm The HTTP Authentication Realm
+	 * @param username The user's username
+	 * @param password The user's plain text password(ugh.)
+	 * @param authHeader The Authentication header sent by the client
+	 * @param requestBody The HTTP request body(if any, set to empty string if
+	 *            null) sent by the client
+	 * @param httpMethod The HTTP method(GET, HEAD, POST, etc.) used by the
+	 *            client */
 	public HttpDigestAuthorization(String realm, String username, String password, String authHeader, final String requestBody, final String httpMethod) {
 		this.realm = realm;
 		this.userName = username;
 		this.password = password;
 		this.authHeader = authHeader;
-		this.requestBody = requestBody;
+		this.requestBody = requestBody == null ? "" : requestBody;
 		this.httpMethod = httpMethod;
 		this.nonce = nextNonce();
 	}
@@ -44,6 +51,7 @@ public final class HttpDigestAuthorization {
 		return nonce;
 	}
 	
+	/** @return The result of the authentication */
 	public final AuthorizationResult authenticate() {
 		if(StringUtils.isBlank(this.authHeader)) {
 			return new AuthorizationResult(false, false, "WWW-Authenticate: " + this.getAuthenticateHeader(), "Authorization required.");
@@ -115,10 +123,16 @@ public final class HttpDigestAuthorization {
 		return values;
 	}
 	
+	/** @author Brian_Entei */
 	public static final class AuthorizationResult {
 		private final boolean	passed;
+		/** True if the client used the correct authentication header type(Basic,
+		 * <em>Digest</em>, etc.) */
 		public final boolean	requestUsedCorrectHeader;
+		/** The header(may be null) that will need to be returned to the client
+		 * if authentication failed */
 		public final String		resultingAuthenticationHeader;
+		/** Status message for the authentication attempt */
 		public final String		message;
 		
 		protected AuthorizationResult(boolean passed, boolean requestUsedCorrectHeader, String resultingAuthenticationHeader, String message) {
@@ -128,6 +142,7 @@ public final class HttpDigestAuthorization {
 			this.message = message;
 		}
 		
+		/** @return True if the client provided the correct username and password */
 		public final boolean passed() {
 			return this.passed ? this.requestUsedCorrectHeader : false;
 		}
