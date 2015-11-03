@@ -9,4 +9,5 @@ public enum Response {
 	private Response() {
 		this.text = this.name().substring(0, 1).toUpperCase() + this.name().substring(1).toLowerCase();
 	}
+	
 }
