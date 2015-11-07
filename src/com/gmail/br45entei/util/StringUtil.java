@@ -522,6 +522,17 @@ public strictfp class StringUtil {
 		}
 	}
 	
+	/** @param value The value to test
+	 * @return Whether or not it is a valid double value */
+	public static final boolean isStrDouble(String value) {
+		try {
+			Double.valueOf(value).doubleValue();
+			return true;
+		} catch(Throwable ignored) {
+			return false;
+		}
+	}
+	
 	/** Compare Strings in alphabetical order */
 	public static final Comparator<String>	ALPHABETICAL_ORDER	= new Comparator<String>() {
 																	@Override

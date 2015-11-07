@@ -21,6 +21,7 @@ import java.util.UUID;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Control;
@@ -322,6 +323,63 @@ public class Functions {
 	 * @return The resulting string */
 	public static String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
 		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""))).format(new Date());
+	}
+	
+	/** @param shell The shell whose text will be set
+	 * @param text The text to set
+	 * @return True if the text was changed */
+	public static boolean setTextFor(Shell shell, String text) {
+		if(text != null) {
+			if(!text.equals(shell.getText())) {
+				shell.setText(text);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param shell The shell whose images will be set
+	 * @param images The images to set
+	 * @return True if the shell's images were changed */
+	public static final boolean setShellImages(Shell shell, Image[] images) {
+		if(shell == null || images == null) {
+			return false;
+		}
+		if(!equals(shell.getImages(), images)) {
+			if(images.length > 0) {
+				shell.setImage(images[0]);
+			}
+			shell.setImages(images);
+			return true;
+		}
+		return false;
+	}
+	
+	/** @param images1 The first {@link Image}[] array
+	 * @param images2 The second {@link Image}[] array
+	 * @return Whether or not the arrays are identical */
+	public static final boolean equals(Image[] images1, Image[] images2) {
+		if(images1 == images2) {
+			return true;
+		}
+		if(images1 != null && images2 != null && images1.length == images2.length) {
+			for(int i = 0; i < images1.length; i++) {
+				Image image1 = images1[i];
+				Image image2 = images2[i];
+				if(image1 == null && image2 == null) {
+					continue;
+				}
+				if(image1 != null && image2 != null) {
+					if(image1 != image2 && !image1.equals(image2)) {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 	
 }

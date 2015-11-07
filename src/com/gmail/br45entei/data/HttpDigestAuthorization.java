@@ -2,104 +2,167 @@ package com.gmail.br45entei.data;
 
 import com.gmail.br45entei.util.StringUtil;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /** @author <a href="https://gist.github.com/usamadar/2912088">Usama
- *         Dar(munir.usama@gmail.com)</a> */
+ *         Dar(munir.usama@gmail.com)</a>
+ * @author Brian_Entei */
 public final class HttpDigestAuthorization {
 	
-	private static final ArrayList<String>	usedNonces	= new ArrayList<>();
+	private static final String									qop					= "auth-int";					//auth-int
+	private static final ArrayList<String>						usedNonces			= new ArrayList<>();
 	
-	private final String					userName;
-	private final String					password;
-	private final String					realm;
-	private final String					authHeader;
-	private final String					requestBody;
-	private final String					httpMethod;
+	private final String										userName;
+	private final String										password;
+	private final String										realm;
 	
-	private final String					nonce;
+	protected volatile String									nonce;												//TODO Make nonces per-client and only use one instance of this class per realm+creds through all the threads in JavaWebServer
+	protected static final ConcurrentHashMap<String, String>	authorizedCookies	= new ConcurrentHashMap<>();
+	
+	//private final ScheduledExecutorService	nonceRefreshExecutor;
 	
 	/** @param realm The HTTP Authentication Realm
 	 * @param username The user's username
-	 * @param password The user's plain text password(ugh.)
+	 * @param password The user's plain text password(ugh.) */
+	public HttpDigestAuthorization(String realm, String username, String password) {
+		this.realm = realm;
+		this.userName = username;
+		this.password = password;
+		this.nonce = calculateNonce();//"16b1b890cc254d5ff3109cd3a4a12048";
+		/*this.nonceRefreshExecutor = Executors.newScheduledThreadPool(1);
+		
+		this.nonceRefreshExecutor.scheduleAtFixedRate(new Runnable() {
+			
+			@Override
+			public void run() {
+				HttpDigestAuthorization.this.nonce = calculateNonce();
+			}
+		}, 1, 1, TimeUnit.MINUTES);*/
+	}
+	
+	/** Calculate the nonce based on current time-stamp up to the second, and a
+	 * random seed
+	 *
+	 * @return The calculated nonce */
+	public static final String calculateNonce() {
+		return DigestUtils.md5Hex(new SimpleDateFormat("yyyy:MM:dd:hh:mm:ss").format(new Date()) + Integer.valueOf(new Random(100000).nextInt()).toString());
+	}
+	
+	private static final String getAuthorizedCookieFor(String clientIP) {
+		return authorizedCookies.get(clientIP);
+	}
+	
+	private static final void setAuthorizedCookieFor(String clientIP, String cookieData) {
+		if(cookieData == null) {
+			authorizedCookies.remove(clientIP);//Prevents NPE when putting null objects into concurrent hash maps.
+		} else {
+			authorizedCookies.put(clientIP, cookieData);
+		}
+	}
+	
+	/** @return The result of the authentication
 	 * @param authHeader The Authentication header sent by the client
 	 * @param requestBody The HTTP request body(if any, set to empty string if
 	 *            null) sent by the client
 	 * @param httpMethod The HTTP method(GET, HEAD, POST, etc.) used by the
-	 *            client */
-	public HttpDigestAuthorization(String realm, String username, String password, String authHeader, final String requestBody, final String httpMethod) {
-		this.realm = realm;
-		this.userName = username;
-		this.password = password;
-		this.authHeader = authHeader;
-		this.requestBody = requestBody == null ? "" : requestBody;
-		this.httpMethod = httpMethod;
-		this.nonce = nextNonce();
-	}
-	
-	private static final String nextNonce() {
-		String nonce = StringUtil.nextSessionId();
-		while(usedNonces.contains(nonce)) {
-			nonce = StringUtil.nextSessionId();
+	 *            client
+	 * @param cookieHeaders The cookies that the client sent, if any(must not be
+	 *            null) */
+	public final AuthorizationResult authenticate(final String authHeader, String requestBody, String httpMethod, String domain, String clientIP, ArrayList<String> cookieHeaders) {
+		final String authorizedCookie = getAuthorizedCookieFor(clientIP);
+		if(StringUtils.isBlank(authHeader)) {
+			return new AuthorizationResult(false, false, "WWW-Authenticate: " + this.getAuthenticateHeader(), null, domain, clientIP, "Authorization required");
 		}
-		usedNonces.add(nonce);
-		return nonce;
-	}
-	
-	/** @return The result of the authentication */
-	public final AuthorizationResult authenticate() {
-		if(StringUtils.isBlank(this.authHeader)) {
-			return new AuthorizationResult(false, false, "WWW-Authenticate: " + this.getAuthenticateHeader(), "Authorization required.");
-		}
-		if(this.authHeader.startsWith("Digest")) {
-			// parse the values of the Authentication header into a hashmap
-			HashMap<String, String> headerValues = parseHeader(this.authHeader);
-			
-			String ha1 = DigestUtils.md5Hex(this.userName + ":" + this.realm + ":" + this.password);
-			String qop = headerValues.get("qop");
-			String reqURI = headerValues.get("uri");
-			
-			String ha2;
-			if(!StringUtils.isBlank(qop) && qop.equals("auth-int")) {
-				String entityBodyMd5 = DigestUtils.md5Hex(this.requestBody);
-				ha2 = DigestUtils.md5Hex(this.httpMethod + ":" + reqURI + ":" + entityBodyMd5);
-			} else {
-				ha2 = DigestUtils.md5Hex(this.httpMethod + ":" + reqURI);
+		final String authType = authHeader.split(Pattern.quote(" "))[0];
+		if(authType.equals("Digest")) {
+			if(authorizedCookie != null && !authorizedCookie.isEmpty()) {//Allow session logins
+				for(String cookie : cookieHeaders) {
+					if(cookie != null && !cookie.isEmpty()) {
+						String[] split = cookie.split(Pattern.quote("="));
+						if(split.length > 1) {
+							String pname = split[0];
+							String pvalue = StringUtil.stringArrayToString(split, '=', 1);
+							if(pname.equalsIgnoreCase("auth")) {
+								if(authorizedCookie.equals(pvalue)) {
+									return new AuthorizationResult(true, true, null, authorizedCookie, domain, clientIP, "Login successful.");
+								}
+							}
+						}
+					}
+				}
 			}
 			
+			// parse the values of the Authentication header into a hashmap
+			HashMap<String, String> headerValues = parseHeader(authHeader);
+			
+			//System.out.println("=============================================");
+			//System.out.println("(ha1): (" + this.userName + ":" + this.realm + ":" + this.password + ");");
+			String ha1 = DigestUtils.md5Hex(this.userName + ":" + this.realm + ":" + this.password);
+			//System.out.println("ha1: \"" + ha1 + "\";");
+			String qop = headerValues.get("qop");
+			//System.out.println("qop: \"" + qop + "\";");
+			String reqURI = headerValues.get("uri");
+			//System.out.println("reqURI: \"" + reqURI + "\";");
+			
+			String ha2;
+			if("auth-int".equals(qop)) {
+				String entityBodyMd5 = DigestUtils.md5Hex(requestBody);
+				//	System.out.println("(ha2[0]): \"" + (httpMethod + ":" + reqURI + ":" + entityBodyMd5) + "\";");
+				ha2 = DigestUtils.md5Hex(httpMethod + ":" + reqURI + ":" + entityBodyMd5);
+			} else {
+				//	System.out.println("(ha2[1]): \"" + (httpMethod + ":" + reqURI) + "\";");
+				ha2 = DigestUtils.md5Hex(httpMethod + ":" + reqURI);
+			}
+			//System.out.println("ha2: \"" + ha2 + "\";");
+			
 			String serverResponse;
-			String clientRealm = headerValues.get("realm");
+			//String clientRealm = headerValues.get("realm");
 			
 			if(StringUtils.isBlank(qop)) {
+				//	System.out.println("(serverResponse): \"" + (ha1 + ":" + this.nonce + ":" + ha2) + "\";");
 				serverResponse = DigestUtils.md5Hex(ha1 + ":" + this.nonce + ":" + ha2);
 			} else {
 				String nonceCount = headerValues.get("nc");
 				String clientNonce = headerValues.get("cnonce");
+				//	System.out.println("(serverResponse): \"" + (ha1 + ":" + this.nonce + ":" + nonceCount + ":" + clientNonce + ":" + qop + ":" + ha2) + "\";");
 				
 				serverResponse = DigestUtils.md5Hex(ha1 + ":" + this.nonce + ":" + nonceCount + ":" + clientNonce + ":" + qop + ":" + ha2);
 				
 			}
 			String clientResponse = headerValues.get("response");
 			
-			if(!serverResponse.equals(clientResponse) || !this.realm.equals(clientRealm)) {
-				return new AuthorizationResult(false, true, "WWW-Authenticate: " + this.getAuthenticateHeader(), "Authentication failure: Unknown username or bad password.");
+			//System.out.println("Server Response: \"" + serverResponse + "\";");
+			//System.out.println("Client Response: \"" + clientResponse + "\";");
+			//System.out.println("=============================================");
+			
+			if(!serverResponse.equals(clientResponse)) {
+				this.nonce = calculateNonce();
+				setAuthorizedCookieFor(clientIP, null);
+				return new AuthorizationResult(false, true, "WWW-Authenticate: " + this.getAuthenticateHeader(), null, domain, clientIP, "Authentication failure: Unknown username or bad password.");
 			}
-			return new AuthorizationResult(true, true, null, "Login successful.");
+			setAuthorizedCookieFor(clientIP, StringUtil.nextSessionId());
+			return new AuthorizationResult(true, true, null, getAuthorizedCookieFor(clientIP), domain, clientIP, "Login successful.");
 		}
-		return new AuthorizationResult(false, false, null, "Digest Authorization expected, received \"" + this.authHeader.split(Pattern.quote(" "))[0] + "\".");
+		this.nonce = calculateNonce();
+		setAuthorizedCookieFor(clientIP, null);
+		return new AuthorizationResult(false, false, "WWW-Authenticate: " + this.getAuthenticateHeader(), null, domain, clientIP, "Digest Authorization expected, received \"" + authType + "\".");
 	}
 	
-	private final String getAuthenticateHeader() {
-		return "Digest realm=\"" + this.realm + "\",qop=auth,nonce=\"" + this.nonce + "\",opaque=\"" + getOpaque(this.realm, this.nonce) + "\"";
+	public final String getAuthenticateHeader() {
+		return "Digest realm=\"" + this.realm + "\",qop=" + qop + ",nonce=\"" + this.nonce + "\",opaque=\"" + getOpaque(this.realm, this.nonce) + "\"";
 	}
 	
-	private static final String getOpaque(String domain, String nonce) {
-		return DigestUtils.md5Hex(domain + nonce);
+	private static final String getOpaque(String realm, String nonce) {
+		return DigestUtils.md5Hex(realm + nonce);
 	}
 	
 	/** Gets the Authorization header string minus the "AuthType" and returns a
@@ -132,13 +195,23 @@ public final class HttpDigestAuthorization {
 		/** The header(may be null) that will need to be returned to the client
 		 * if authentication failed */
 		public final String		resultingAuthenticationHeader;
+		/** Cookie created after a successful login to allow a client to log in
+		 * after a time out(resets on the next failed authentication) */
+		public final String		authorizedCookie;
+		/** The domain on which the authorization attempt took place */
+		public final String		domain;
+		/** The ip address of the client that attempted the authorization */
+		public final String		clientIP;
 		/** Status message for the authentication attempt */
 		public final String		message;
 		
-		protected AuthorizationResult(boolean passed, boolean requestUsedCorrectHeader, String resultingAuthenticationHeader, String message) {
+		protected AuthorizationResult(boolean passed, boolean requestUsedCorrectHeader, String resultingAuthenticationHeader, String authorizedCookie, String domain, String clientIP, String message) {
 			this.passed = passed;
 			this.requestUsedCorrectHeader = requestUsedCorrectHeader;
 			this.resultingAuthenticationHeader = resultingAuthenticationHeader;
+			this.authorizedCookie = "auth=" + authorizedCookie + "; Domain=" + domain + "; Path=/; HttpOnly";
+			this.domain = domain;
+			this.clientIP = clientIP;
 			this.message = message;
 		}
 		
