@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 public class DisposableByteArrayOutputStream extends ByteArrayOutputStream {
 	
 	/** Wipes this ByteArrayOutputStream's byte[] array and resets the counter */
-	public final void dispose() {
+	public final synchronized void dispose() {
 		this.buf = new byte[0];
 		this.count = 0;
 		System.gc();

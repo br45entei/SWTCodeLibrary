@@ -523,6 +523,17 @@ public strictfp class StringUtil {
 	}
 	
 	/** @param value The value to test
+	 * @return Whether or not it is a valid int value */
+	public static final boolean isStrInt(String value) {
+		try {
+			Integer.valueOf(value).intValue();
+			return true;
+		} catch(Throwable ignored) {
+			return false;
+		}
+	}
+	
+	/** @param value The value to test
 	 * @return Whether or not it is a valid double value */
 	public static final boolean isStrDouble(String value) {
 		try {

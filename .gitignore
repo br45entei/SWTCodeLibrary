@@ -47,3 +47,5 @@ apacheHTTPClient
 apacheHTTPClientResources
 apacheHTTPCore
 apacheHTTPCoreResources
+PasswordHashLicense.txt
+src/com/gmail/br45entei/data/HttpDigestAuthorization.java

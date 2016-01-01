@@ -2,6 +2,7 @@ package com.gmail.br45entei.data;
 
 import com.gmail.br45entei.util.StringUtil;
 
+import java.security.Security;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +13,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /** @author <a href="https://gist.github.com/usamadar/2912088">Usama
  *         Dar(munir.usama@gmail.com)</a>
@@ -29,6 +31,10 @@ public final class HttpDigestAuthorization {
 	protected static final ConcurrentHashMap<String, String>	authorizedCookies	= new ConcurrentHashMap<>();
 	
 	//private final ScheduledExecutorService	nonceRefreshExecutor;
+	
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 	
 	/** @param realm The HTTP Authentication Realm
 	 * @param username The user's username
@@ -77,7 +83,7 @@ public final class HttpDigestAuthorization {
 	 *            client
 	 * @param cookieHeaders The cookies that the client sent, if any(must not be
 	 *            null) */
-	public final AuthorizationResult authenticate(final String authHeader, String requestBody, String httpMethod, String domain, String clientIP, ArrayList<String> cookieHeaders) {
+	public final AuthorizationResult authenticate2(final String authHeader, String requestBody, String httpMethod, String domain, String clientIP, ArrayList<String> cookieHeaders) {
 		final String authorizedCookie = getAuthorizedCookieFor(clientIP);
 		if(StringUtils.isBlank(authHeader)) {
 			return new AuthorizationResult(false, false, "WWW-Authenticate: " + this.getAuthenticateHeader(), null, domain, clientIP, "Authorization required");
