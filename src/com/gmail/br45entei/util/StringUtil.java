@@ -1,15 +1,18 @@
 package com.gmail.br45entei.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
@@ -26,11 +29,13 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /** @author Brian_Entei */
+@SuppressWarnings("javadoc")
 public strictfp class StringUtil {
 	
 	public static final byte[] readFile(File file) {
@@ -117,7 +122,7 @@ public strictfp class StringUtil {
 		//long millis = (4 * MILLENNIUM) + (2 * DAY) + (0 * HOUR) + (0 * MINUTE) + (4 * SECOND) + (0 * MILLISECOND);
 		//long millis = -((4 * MILLENNIUM) + (364 * DAY) + (0 * HOUR) + (0 * MINUTE) + (0 * SECOND) + (0 * MILLISECOND));
 		//long millis = -1L + YEAR;
-		long millis = 0L;
+		long millis = 245981L;//0L;
 		System.out.println(StringUtil.getElapsedTime(millis));
 	}
 	
@@ -176,7 +181,8 @@ public strictfp class StringUtil {
 		return rtrn.equals("?") ? "" : rtrn;
 	}
 	
-	/** @param getTimeOnly Whether or not time should be included but not date as
+	/** @param getTimeOnly Whether or not time should be included but not date
+	 *            as
 	 *            well
 	 * @param fileSystemSafe Whether or not the returned string will be used in
 	 *            the making of a folder or file
@@ -217,6 +223,27 @@ public strictfp class StringUtil {
 		return str;
 	}
 	
+	/** @param arrays The array or arrays to check
+	 * @return The Class type of the array */
+	@SuppressWarnings("unchecked")
+	public static final <T> Class<T> getClassFromArray(T[]... arrays) {
+		Class<T> clazz = null;
+		for(T[] array : arrays) {
+			if(clazz != null) {
+				break;
+			}
+			if(array != null) {
+				for(T element : array) {
+					if(element != null) {
+						clazz = (Class<T>) element.getClass();
+						break;
+					}
+				}
+			}
+		}
+		return clazz;
+	}
+	
 	/** @param <T> The arrays' class
 	 * @param arrays The String arrays to combine
 	 * @return The combined arrays as one String[] array, or null if none of the
@@ -234,6 +261,7 @@ public strictfp class StringUtil {
 				for(T element : array) {
 					if(element != null) {
 						clazz = (Class<T>) element.getClass();
+						break;
 					}
 				}
 			}
@@ -308,12 +336,9 @@ public strictfp class StringUtil {
 		int i = 0;
 		for(String element : array) {
 			if(i >= startIndex) {
-				rtrn += element + c;
+				rtrn += element + (i + 1 == array.length ? "" : c);
 			}
 			i++;
-		}
-		if(rtrn.length() > 1) {
-			rtrn = rtrn.substring(0, rtrn.length() - 1);
 		}
 		return rtrn;
 	}
@@ -349,6 +374,30 @@ public strictfp class StringUtil {
 		}
 		if(rtrn.length() > 1) {
 			rtrn = rtrn.substring(0, rtrn.length() - 1);
+		}
+		return rtrn;
+	}
+	
+	/** Resizes an array. Can be used to copy arrays as well.
+	 * 
+	 * @param clazz The class type of the array
+	 * @param array The array to resize
+	 * @param startIndex The index at which the resizing will start
+	 * @param endIndex The index at which the resizing will stop short at
+	 * @return The resized array */
+	public static final <T> T[] resizeArray(Class<T> clazz, T[] array, int startIndex, int endIndex) {
+		if(array == null || startIndex >= array.length || endIndex > array.length || startIndex >= endIndex || startIndex < 0 || endIndex < 0) {
+			return array;
+		}
+		@SuppressWarnings("unchecked")
+		T[] rtrn = (T[]) Array.newInstance(clazz, (endIndex - startIndex));
+		int i = 0;
+		for(int j = startIndex; j < endIndex; j++) {
+			if(j >= array.length) {
+				break;
+			}
+			rtrn[i] = array[j];
+			i++;
 		}
 		return rtrn;
 	}
@@ -394,7 +443,8 @@ public strictfp class StringUtil {
 		return rtrn;
 	}
 	
-	/** @param millis The amount of milliseconds that have passed since midnight,
+	/** @param millis The amount of milliseconds that have passed since
+	 *            midnight,
 	 *            January 1, 1970
 	 * @return The resulting string in cache format */
 	public static final String getCacheTime(long millis) {
@@ -406,21 +456,50 @@ public strictfp class StringUtil {
 		return getCacheValidatorTimeFormat().format(new Date());
 	}
 	
-	public static final byte[] compressString(String str, String charsetName) throws IOException {
-		if(str == null || str.length() == 0) {
-			return new byte[0];
+	public static final byte[] compressString(String str, Charset charset) {
+		return compressString(str, charset != null ? charset.name() : null);
+	}
+	
+	public static final byte[] compressString(String str, String charsetName) {
+		if(str == null || str.length() <= 33) {
+			try {
+				return str == null ? new byte[0] : str.getBytes(charsetName);
+			} catch(UnsupportedEncodingException ignored) {
+				return str.getBytes();
+			}
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream(str.length());
-		GZIPOutputStream gzip = new GZIPOutputStream(out);
-		gzip.write(str.getBytes(charsetName));
-		gzip.flush();
-		gzip.close();
-		byte[] compressedBytes = out.toByteArray();
-		return compressedBytes;
+		try(GZIPOutputStream gzip = new GZIPOutputStream(out)) {
+			gzip.write(str.getBytes(charsetName));
+			gzip.flush();
+		} catch(Throwable ignored) {
+		}
+		return out.toByteArray();
+	}
+	
+	public static final String decompressString(byte[] data) {
+		return readGZippedStringFromBuffer(data);
+	}
+	
+	public static final String readGZippedStringFromBuffer(byte[] buf) {
+		String rtrn = null;
+		if(buf != null) {
+			try(GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(buf))) {
+				rtrn = "";
+				byte[] b = new byte[4096];
+				int read;
+				while((read = in.read(b, 0, b.length)) != -1) {
+					rtrn += new String(b, 0, read, StandardCharsets.UTF_8);
+				}
+			} catch(IOException e) {
+				return rtrn;
+			}
+		}
+		return rtrn;
 	}
 	
 	public static final boolean containsIgnoreCase(String str, String... list) {
-		if(list != null && list.length != 0) {
+		if(str != null && list != null && list.length != 0) {
 			for(String s : Arrays.asList(list)) {
 				if(s != null && s.equalsIgnoreCase(str)) {
 					return true;
@@ -431,9 +510,9 @@ public strictfp class StringUtil {
 	}
 	
 	public static final boolean containsIgnoreCase(ArrayList<String> list, String str) {
-		if(list != null && !list.isEmpty()) {
+		if(str != null && list != null && !list.isEmpty()) {
 			for(String s : new ArrayList<>(list)) {
-				if(s != null && s.equalsIgnoreCase(str)) {
+				if(str.equalsIgnoreCase(s)) {
 					return true;
 				}
 			}
@@ -507,6 +586,7 @@ public strictfp class StringUtil {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private static final boolean isCharIllegal(String str) {
 		return(str.equals("\n") || str.equals("\r") || str.equals("\t") || str.equals("\0") || str.equals("\f") || str.equals("`") || str.equals("'") || str.equals("?") || str.equals("*") || str.equals("<") || str.equals(">") || str.equals("|") || str.equals("\""));
 	}
@@ -566,7 +646,7 @@ public strictfp class StringUtil {
 	protected static final long				HOUR				= 60 * MINUTE;
 	protected static final long				DAY					= 24 * HOUR;
 	protected static final long				WEEK				= 7 * DAY;
-	protected static final long				YEAR				= 365 * DAY;	//(long) (365.2395 * DAY);
+	protected static final long				YEAR				= 365 * DAY;														//(long) (365.2395 * DAY);
 	protected static final long				DECADE				= 10 * YEAR;
 	protected static final long				CENTURY				= 10 * DECADE;
 	protected static final long				MILLENNIUM			= 10 * CENTURY;
@@ -581,6 +661,7 @@ public strictfp class StringUtil {
 	 * @param showMilliseconds Whether or not to show milliseconds(...:000)
 	 * @return The time, in String format */
 	public static String getElapsedTime(long millis, boolean showMilliseconds) {
+		final long total = millis;
 		boolean negative = millis < 0;
 		if(negative) {
 			millis = Math.abs(millis);
@@ -629,7 +710,12 @@ public strictfp class StringUtil {
 		long milliseconds = 0L;
 		if(millis >= MILLISECOND && showMilliseconds) {
 			milliseconds = millis / MILLISECOND;
-			millis %= milliseconds;
+			//millis %= milliseconds;
+		} else if(!showMilliseconds) {
+			long check = millis / MILLISECOND;
+			if(check >= 500L && check <= 999L) {
+				return getElapsedTime((total + 1000L) - check, false);
+			}
 		}
 		final String hourStr = (hours == 0 ? "" : hours + ":");
 		final String minuteStr = (minutes == 0 ? (hours != 0 ? "00:" : (seconds != 0 || milliseconds != 0 ? "0:" : "")) : (minutes < 10 ? "0" : "") + minutes + ":");

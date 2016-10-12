@@ -3,13 +3,16 @@ package com.gmail.br45entei.util;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
 
 import org.apache.commons.io.FilenameUtils;
 
 /** @author Brian_Entei */
+@SuppressWarnings("javadoc")
 public final class JavaProgramArguments {
 	
 	private static volatile JavaProgramArguments	instance;
+	public final ArrayList<String>					arguments	= new ArrayList<>();
 	
 	public static final void initializeFromMainClass(Class<?> clazz, String[] args) {
 		instance = new JavaProgramArguments(clazz.getPackage().getName(), args);
@@ -27,6 +30,11 @@ public final class JavaProgramArguments {
 	public final String	javaExecutable;
 	
 	private JavaProgramArguments(final String mainPackageName, final String[] args) {
+		for(String arg : args) {
+			if(arg != null && !arg.trim().isEmpty()) {
+				this.arguments.add(arg);
+			}
+		}
 		final String programArgs = StringUtil.stringArrayToString(' ', args).trim();
 		String programArgsCmdLine;
 		if(programArgs.isEmpty()) {

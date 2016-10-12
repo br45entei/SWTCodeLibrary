@@ -7,6 +7,7 @@ import java.beans.PropertyChangeListener;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
+@SuppressWarnings("javadoc")
 public class WindowsClassicThemeDetector {
 	
 	protected static final boolean isWindowsLAF() {

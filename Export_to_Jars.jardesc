@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
 <jardesc>
-    <jar path="C:/Java/jars/CodeLibrary.jar"/>
+    <jar path="E:/Java/jars/CodeLibrary.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/CodeLibrary/Export_to_Jars.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="true" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
@@ -11,11 +11,9 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <javaElement handleIdentifier="=CodeLibrary/bouncyCastleResources"/>
         <javaElement handleIdentifier="=CodeLibrary/apacheCommonsResources"/>
         <javaElement handleIdentifier="=CodeLibrary/src"/>
         <javaElement handleIdentifier="=CodeLibrary/resources"/>
         <javaElement handleIdentifier="=CodeLibrary/apacheCommons"/>
-        <javaElement handleIdentifier="=CodeLibrary/bouncyCastle"/>
     </selectedElements>
 </jardesc>

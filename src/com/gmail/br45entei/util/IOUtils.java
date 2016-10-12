@@ -6,7 +6,17 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 
 /** @author Brian_Entei */
+@SuppressWarnings("javadoc")
 public final class IOUtils {
+	
+	public static final int getNextAvailablePort() {
+		int port = 0;
+		try(ServerSocket s = new ServerSocket(0)) {
+			port = s.getLocalPort();
+		} catch(Throwable ignored) {
+		}
+		return port;
+	}
 	
 	/** @param port The port to check
 	 * @return True if the port is valid and is available for TCP and UDP. */

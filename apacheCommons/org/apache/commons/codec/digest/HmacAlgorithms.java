@@ -17,78 +17,84 @@
 
 package org.apache.commons.codec.digest;
 
-/**
- * Standard {@link HmacUtils} algorithm names from the <cite>Java Cryptography Architecture Standard Algorithm Name
+/** Standard {@link HmacUtils} algorithm names from the <cite>Java Cryptography
+ * Architecture Standard Algorithm Name
  * Documentation</cite>.
  *
  * <p>
- * <strong>Note: Not all JCE implementations supports all algorithms in this enum.</strong>
+ * <strong>Note: Not all JCE implementations supports all algorithms in this
+ * enum.</strong>
  * </p>
  *
- * @see <a href="http://docs.oracle.com/javase/6/docs/technotes/guides/security/StandardNames.html">Java Cryptography
+ * @see <a href=
+ *      "http://docs.oracle.com/javase/6/docs/technotes/guides/security/StandardNames.html">Java
+ *      Cryptography
  *      Architecture Standard Algorithm Name Documentation</a>
  * @since 1.10
- * @version $Id: HmacAlgorithms.java 1634405 2014-10-26 23:07:26Z ggregory $
- */
+ * @version $Id: HmacAlgorithms.java 1634405 2014-10-26 23:07:26Z ggregory $ */
 public enum HmacAlgorithms {
-
-    /**
-     * The HmacMD5 Message Authentication Code (MAC) algorithm specified in RFC 2104 and RFC 1321.
-     * <p>
-     * Every implementation of the Java platform is required to support this standard Mac algorithm.
-     * </p>
-     */
-    HMAC_MD5("HmacMD5"),
-
-    /**
-     * The HmacSHA1 Message Authentication Code (MAC) algorithm specified in RFC 2104 and FIPS PUB 180-2.
-     * <p>
-     * Every implementation of the Java platform is required to support this standard Mac algorithm.
-     * </p>
-     */
-    HMAC_SHA_1("HmacSHA1"),
-
-    /**
-     * The HmacSHA256 Message Authentication Code (MAC) algorithm specified in RFC 2104 and FIPS PUB 180-2.
-     * <p>
-     * Every implementation of the Java platform is required to support this standard Mac algorithm.
-     * </p>
-     */
-    HMAC_SHA_256("HmacSHA256"),
-
-    /**
-     * The HmacSHA384 Message Authentication Code (MAC) algorithm specified in RFC 2104 and FIPS PUB 180-2.
-     * <p>
-     * Every implementation of the Java platform is <em>not</em> required to support this Mac algorithm.
-     * </p>
-     */
-    HMAC_SHA_384("HmacSHA384"),
-
-    /**
-     * The HmacSHA512 Message Authentication Code (MAC) algorithm specified in RFC 2104 and FIPS PUB 180-2.
-     * <p>
-     * Every implementation of the Java platform is <em>not</em> required to support this Mac algorithm.
-     * </p>
-     */
-    HMAC_SHA_512("HmacSHA512");
-
-    private final String algorithm;
-
-    private HmacAlgorithms(final String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    /**
-     * The algorithm name
-     *
-     * @see <a
-     *      href="http://docs.oracle.com/javase/6/docs/technotes/guides/security/SunProviders.html#SunJCEProvider">Java
-     *      Cryptography Architecture Sun Providers Documentation</a>
-     * @return The algorithm name ("HmacSHA512" for example)
-     */
-    @Override
-    public String toString() {
-        return algorithm;
-    }
-
+	
+	/** The HmacMD5 Message Authentication Code (MAC) algorithm specified in RFC
+	 * 2104 and RFC 1321.
+	 * <p>
+	 * Every implementation of the Java platform is required to support this
+	 * standard Mac algorithm.
+	 * </p>
+	*/
+	HMAC_MD5("HmacMD5"),
+	
+	/** The HmacSHA1 Message Authentication Code (MAC) algorithm specified in
+	 * RFC 2104 and FIPS PUB 180-2.
+	 * <p>
+	 * Every implementation of the Java platform is required to support this
+	 * standard Mac algorithm.
+	 * </p>
+	*/
+	HMAC_SHA_1("HmacSHA1"),
+	
+	/** The HmacSHA256 Message Authentication Code (MAC) algorithm specified in
+	 * RFC 2104 and FIPS PUB 180-2.
+	 * <p>
+	 * Every implementation of the Java platform is required to support this
+	 * standard Mac algorithm.
+	 * </p>
+	*/
+	HMAC_SHA_256("HmacSHA256"),
+	
+	/** The HmacSHA384 Message Authentication Code (MAC) algorithm specified in
+	 * RFC 2104 and FIPS PUB 180-2.
+	 * <p>
+	 * Every implementation of the Java platform is <em>not</em> required to
+	 * support this Mac algorithm.
+	 * </p>
+	*/
+	HMAC_SHA_384("HmacSHA384"),
+	
+	/** The HmacSHA512 Message Authentication Code (MAC) algorithm specified in
+	 * RFC 2104 and FIPS PUB 180-2.
+	 * <p>
+	 * Every implementation of the Java platform is <em>not</em> required to
+	 * support this Mac algorithm.
+	 * </p>
+	*/
+	HMAC_SHA_512("HmacSHA512");
+	
+	private final String algorithm;
+	
+	private HmacAlgorithms(final String algorithm) {
+		this.algorithm = algorithm;
+	}
+	
+	/** The algorithm name
+	 *
+	 * @see <a
+	 *      href=
+	 *      "http://docs.oracle.com/javase/6/docs/technotes/guides/security/SunProviders.html#SunJCEProvider">Java
+	 *      Cryptography Architecture Sun Providers Documentation</a>
+	 * @return The algorithm name ("HmacSHA512" for example) */
+	@Override
+	public String toString() {
+		return this.algorithm;
+	}
+	
 }

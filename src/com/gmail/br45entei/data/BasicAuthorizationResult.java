@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Base64;
 
+@SuppressWarnings("javadoc")
 public final class BasicAuthorizationResult {
 	private static final ConcurrentHashMap<String, SessionID>	sessionIDs		= new ConcurrentHashMap<>();
 	private static final ConcurrentLinkedQueue<SessionID>		usedSessionIDs	= new ConcurrentLinkedQueue<>();

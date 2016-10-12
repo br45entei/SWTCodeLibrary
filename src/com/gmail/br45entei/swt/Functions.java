@@ -8,12 +8,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -29,19 +31,38 @@ import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 
 /** @author Brian_Entei */
+@SuppressWarnings("javadoc")
 public class Functions {
 	
 	private static final char[]			ILLEGAL_CHARACTERS				= {'\n', '\r', '\t', '\0', '\f', '`', '?', '*', '<', '>', '|', '\"'};
 	private static final String[]		ILLEGAL_CHARACTER_REPLACEMENTS	= {"", "", "", "", "", "&#96;", "", "", "&lt;", "&gt;", "", "&quot;"};
 	
 	private static final SecureRandom	random							= new SecureRandom();
+	private static final DecimalFormat	decimal							= new DecimalFormat("#0.00");
+	
+	static {
+		Functions.decimal.setRoundingMode(RoundingMode.HALF_EVEN);
+	}
+	
+	public static final String roundToStr(double d) {
+		return decimal.format(d);
+	}
+	
+	public static final double roundD(double d) {
+		return Double.valueOf(decimal.format(d)).doubleValue();
+	}
+	
+	public static final float roundF(double d) {
+		return Double.valueOf(decimal.format(d)).floatValue();
+	}
 	
 	public static final String nextSessionId() {
 		return new BigInteger(130, random).toString(32);
 	}
 	
 	/** @param str The string to convert
-	 * @return The string with HTML characters converted into normal characters */
+	 * @return The string with HTML characters converted into normal
+	 *         characters */
 	public static String htmlToText(String str) {
 		String rtrn;
 		try {
@@ -315,7 +336,8 @@ public class Functions {
 		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
 	}
 	
-	/** @param getTimeOnly Whether or not time should be included but not date as
+	/** @param getTimeOnly Whether or not time should be included but not date
+	 *            as
 	 *            well
 	 * @param fileSystemSafe Whether or not the returned string will be used in
 	 *            the making of a folder or file
@@ -323,6 +345,17 @@ public class Functions {
 	 * @return The resulting string */
 	public static String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
 		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""))).format(new Date());
+	}
+	
+	/** @return Whether or not a 64 bit system was detected */
+	public static boolean isJvm64bit() {
+		for(String s : new String[] {"sun.arch.data.model", "com.ibm.vm.bitmode", "os.arch"}) {
+			String s1 = System.getProperty(s);
+			if((s1 != null) && s1.contains("64")) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/** @param shell The shell whose text will be set

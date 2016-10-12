@@ -1,5 +1,6 @@
 package com.gmail.br45entei.data;
 
+@SuppressWarnings("javadoc")
 public final class Property<T> {
 	private final String	name;
 	private T				value;

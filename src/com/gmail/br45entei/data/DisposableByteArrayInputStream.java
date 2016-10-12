@@ -3,6 +3,7 @@ package com.gmail.br45entei.data;
 import java.io.ByteArrayInputStream;
 
 /** @author Brian_Entei */
+@SuppressWarnings("javadoc")
 public class DisposableByteArrayInputStream extends ByteArrayInputStream {
 	
 	public DisposableByteArrayInputStream(byte[] buf) {
