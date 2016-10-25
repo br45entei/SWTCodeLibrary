@@ -9,6 +9,12 @@ public class DisposableByteArrayOutputStream extends ByteArrayOutputStream {
 	private volatile int	pos			= 0;
 	private volatile int	markedPos	= 0;
 	
+	/** @return A ByteArrayInputStream using this ByteArrayOutputStream's byte[]
+	 *         array. */
+	public final DisposableByteArrayInputStream asInputStream() {
+		return new DisposableByteArrayInputStream(this.buf, 0, this.count);
+	}
+	
 	/** Retrieves this ByteArrayOutputStream's byte[] array, then calls
 	 * {@link #dispose()} and returns the retrieved bytes.
 	 * 
@@ -63,14 +69,16 @@ public class DisposableByteArrayOutputStream extends ByteArrayOutputStream {
 		this.markedPos = this.pos;
 	}
 	
-	/** @return True, as mark is supported for 'simple' byte buffer operations */
+	/** @return True, as mark is supported for 'simple' byte buffer
+	 *         operations */
 	@SuppressWarnings("static-method")
 	public final boolean markSupported() {
 		return true;
 	}
 	
 	/** Resets the current position of the internal counter used by
-	 * {@link #read()} to the last marked position, or 0 if it was never marked. */
+	 * {@link #read()} to the last marked position, or 0 if it was never
+	 * marked. */
 	public final void resetRead() {
 		if(this.markedPos >= this.size()) {
 			this.markedPos = 0;
@@ -151,12 +159,14 @@ public class DisposableByteArrayOutputStream extends ByteArrayOutputStream {
 		return data;
 	}
 	
-	/** @return True if this ByteArrayOutputStream's byte[] array's size is 0. */
+	/** @return True if this ByteArrayOutputStream's byte[] array's size is
+	 *         0. */
 	public final boolean isEmpty() {
 		return this.buf.length == 0;
 	}
 	
-	/** Wipes this ByteArrayOutputStream's byte[] array and resets the counter. */
+	/** Wipes this ByteArrayOutputStream's byte[] array and resets the
+	 * counter. */
 	public final synchronized void dispose() {
 		this.buf = new byte[0];
 		this.count = 0;

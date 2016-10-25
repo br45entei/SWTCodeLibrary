@@ -2,11 +2,11 @@ package com.gmail.br45entei.data;
 
 @SuppressWarnings("javadoc")
 public final class Property<T> {
-	private final String	name;
-	private T				value;
-	private boolean			isLocked	= false;
+	private final String		name;
+	private volatile T			value;
+	private volatile boolean	isLocked	= false;
 	
-	private String			description	= "";
+	private String				description	= "";
 	
 	public Property(String name) {
 		this.name = name;

@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -72,6 +73,40 @@ public strictfp class StringUtil {
 		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
 	}
 	
+	/** @return Whether or not a 64 bit system was detected */
+	public static boolean isJvm64bit() {
+		for(String s : new String[] {"sun.arch.data.model", "com.ibm.vm.bitmode", "os.arch"}) {
+			String s1 = System.getProperty(s);
+			if((s1 != null) && s1.contains("64")) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** Enum class differentiating types of operating systems
+	 * 
+	 * @author Brian_Entei */
+	public static enum EnumOS {
+		/** Linux or other similar Unix-type operating systems */
+		LINUX,
+		/** Salaries operating systems */
+		SOLARIS,
+		/** Windows operating systems */
+		WINDOWS,
+		/** Mac/OSX */
+		OSX,
+		/** An unknown operating system */
+		UNKNOWN;
+	}
+	
+	/** @return The type of operating system that java is currently running
+	 *         on */
+	public static EnumOS getOSType() {
+		String s = System.getProperty("os.name").toLowerCase();
+		return s.contains("win") ? EnumOS.WINDOWS : (s.contains("mac") ? EnumOS.OSX : (s.contains("solaris") ? EnumOS.SOLARIS : (s.contains("sunos") ? EnumOS.SOLARIS : (s.contains("linux") ? EnumOS.LINUX : (s.contains("unix") ? EnumOS.LINUX : EnumOS.UNKNOWN)))));
+	}
+	
 	private static final SecureRandom	secureRandom	= new SecureRandom();
 	private static final Random			random			= new Random();
 	
@@ -85,6 +120,15 @@ public strictfp class StringUtil {
 	
 	public static final String nextSessionId() {
 		return new BigInteger(130, secureRandom).toString(32);
+	}
+	
+	public static final boolean isFileSystemSafe(String fileName) {
+		try {
+			Paths.get(new File(System.getProperty("user.dir") + File.separator + fileName).toURI());
+			return true;
+		} catch(Throwable ignored) {
+			return false;
+		}
 	}
 	
 	public static final void main(String[] args) {

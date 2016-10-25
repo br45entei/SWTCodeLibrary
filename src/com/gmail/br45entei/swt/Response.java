@@ -3,7 +3,7 @@ package com.gmail.br45entei.swt;
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
 public enum Response {
-	YES(), NO(), YES_TO_ALL(), NO_TO_ALL(), OK(), CANCEL(), DONE(), ABORT(), RETRY(), IGNORE(), CONNECT(), RECONNECT(), DISCONNECT(), UPDATE(), CLOSE(), NO_RESPONSE();
+	YES(), NO(), YES_TO_ALL(), NO_TO_ALL(), OK(), CANCEL(), DONE(), ABORT(), RETRY(), IGNORE(), CONNECT(), RECONNECT(), DISCONNECT(), UPDATE(), CLOSE(), NO_RESPONSE(), NO_PERMS();
 	
 	public final String	text;
 	

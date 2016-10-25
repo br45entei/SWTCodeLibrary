@@ -26,9 +26,12 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
@@ -102,6 +105,15 @@ public class Functions {
 		}
 		if(!control.getSize().equals(size)) {
 			control.setSize(size);
+		}
+	}
+	
+	public static final void setSelectionFor(Button button, boolean value) {
+		if(button == null) {
+			return;
+		}
+		if(button.getSelection() != value) {
+			button.setSelection(value);
 		}
 	}
 	
@@ -365,6 +377,45 @@ public class Functions {
 		if(text != null) {
 			if(!text.equals(shell.getText())) {
 				shell.setText(text);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param label The label whose text will be set
+	 * @param text The text to set
+	 * @return True if the text was changed */
+	public static boolean setTextFor(Label label, String text) {
+		if(text != null) {
+			if(!text.equals(label.getText())) {
+				label.setText(text);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param text The text whose text will be set
+	 * @param txt The string of text to set
+	 * @return True if the text's text was changed */
+	public static boolean setTextFor(Text text, String txt) {
+		if(txt != null) {
+			if(!txt.equals(text.getText())) {
+				text.setText(txt);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param button The button whose text will be set
+	 * @param text The text to set
+	 * @return True if the text was changed */
+	public static boolean setTextFor(Button button, String text) {
+		if(text != null) {
+			if(!text.equals(button.getText())) {
+				button.setText(text);
 				return true;
 			}
 		}
