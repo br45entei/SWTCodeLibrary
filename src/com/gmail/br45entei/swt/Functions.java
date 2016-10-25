@@ -199,7 +199,9 @@ public class Functions {
 		}
 		int exp = (int) (Math.log(bytes) / Math.log(unit));
 		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-		return String.format("%." + decimalPlaces + "f %sB", new Double(bytes / Math.pow(unit, exp)), pre);
+		String[] split = String.format("%." + decimalPlaces + "f %sB", new Double(bytes / Math.pow(unit, exp)), pre).split(Pattern.quote(" "));
+		split[0] = split[0].indexOf(".") < 0 ? split[0] : split[0].replaceAll("0*$", "").replaceAll("\\.$", "");
+		return split[0] + " " + split[1];
 	}
 	
 	/** @param file
