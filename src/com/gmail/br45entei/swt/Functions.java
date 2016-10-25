@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.HttpURLConnection;
@@ -19,6 +20,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -133,6 +135,54 @@ public class Functions {
 		int x = bounds.x + (bounds.width - rect.width) / 2;
 		int y = bounds.y + (bounds.height - rect.height) / 2;
 		shell2.setLocation(x, y);
+	}
+	
+	public static final void main(String[] args) {
+		long test = 157483213;
+		String humanReadable = humanReadableByteCount(test, true, 6);
+		String result = new BigDecimal(fromHumanReadableByteCount(humanReadable, true)).toPlainString();
+		System.out.println("test long: " + test + "; readable: " + humanReadable + "; converted back to double: " + result);
+	}
+	
+	/** @param bytes The humanReadableByteCount generated from
+	 *            {@link #humanReadableByteCount(long, boolean, int)}
+	 * @param si Whether or not si was used
+	 * @return The resulting double */
+	public static double fromHumanReadableByteCount(String bytes, boolean si) {
+		String[] split = bytes.split(Pattern.quote(" "));
+		if(split.length != 2) {
+			return -1.0D;
+		}
+		double b = Double.valueOf(split[0]).doubleValue();
+		if(split[1].equalsIgnoreCase("b")) {
+			return b;
+		}
+		final char pre = split[1].toUpperCase().charAt(0);
+		double unit = si ? 10.00D : 10.24D;//si ? 1000 : 1024;
+		int exp = 0;
+		switch(pre) {
+		case 'K':
+			exp = 3;
+			break;
+		case 'M':
+			exp = 6;
+			break;
+		case 'G':
+			exp = 9;
+			break;
+		case 'T':
+			exp = 12;
+			break;
+		case 'P':
+			exp = 15;
+			break;
+		case 'E':
+			exp = 18;
+			break;
+		default:
+			break;
+		}
+		return(b * Math.pow(unit, exp));// / 1000000000000.0D;
 	}
 	
 	/** @param bytes The amount of bytes
