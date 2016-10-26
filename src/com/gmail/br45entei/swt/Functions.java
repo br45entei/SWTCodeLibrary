@@ -426,7 +426,7 @@ public class Functions {
 	 * @param text The text to set
 	 * @return True if the text was changed */
 	public static boolean setTextFor(Shell shell, String text) {
-		if(text != null) {
+		if(shell != null && !shell.isDisposed() && text != null) {
 			if(!text.equals(shell.getText())) {
 				shell.setText(text);
 				return true;
@@ -439,7 +439,7 @@ public class Functions {
 	 * @param text The text to set
 	 * @return True if the text was changed */
 	public static boolean setTextFor(Label label, String text) {
-		if(text != null) {
+		if(label != null && !label.isDisposed() && text != null) {
 			if(!text.equals(label.getText())) {
 				label.setText(text);
 				return true;
@@ -452,7 +452,7 @@ public class Functions {
 	 * @param txt The string of text to set
 	 * @return True if the text's text was changed */
 	public static boolean setTextFor(Text text, String txt) {
-		if(txt != null) {
+		if(text != null && !text.isDisposed() && txt != null) {
 			if(!txt.equals(text.getText())) {
 				text.setText(txt);
 				return true;
@@ -465,7 +465,7 @@ public class Functions {
 	 * @param text The text to set
 	 * @return True if the text was changed */
 	public static boolean setTextFor(Button button, String text) {
-		if(text != null) {
+		if(button != null && !button.isDisposed() && text != null) {
 			if(!text.equals(button.getText())) {
 				button.setText(text);
 				return true;
@@ -478,7 +478,7 @@ public class Functions {
 	 * @param images The images to set
 	 * @return True if the shell's images were changed */
 	public static final boolean setShellImages(Shell shell, Image[] images) {
-		if(shell == null || images == null) {
+		if(shell == null || images == null || shell.isDisposed()) {
 			return false;
 		}
 		if(!equals(shell.getImages(), images)) {

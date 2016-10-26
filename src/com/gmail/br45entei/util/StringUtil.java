@@ -11,11 +11,13 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +40,12 @@ import org.apache.commons.lang3.StringEscapeUtils;
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
 public strictfp class StringUtil {
+	
+	public static final DecimalFormat decimal = new DecimalFormat("#0.00");
+	
+	static {
+		decimal.setRoundingMode(RoundingMode.HALF_EVEN);
+	}
 	
 	public static final byte[] readFile(File file) {
 		if(file == null || !file.isFile()) {
