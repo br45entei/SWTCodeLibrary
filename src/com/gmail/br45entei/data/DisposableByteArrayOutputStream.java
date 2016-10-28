@@ -20,7 +20,7 @@ public class DisposableByteArrayOutputStream extends ByteArrayOutputStream {
 	 * 
 	 * @return The bytes. */
 	public final byte[] getBytesAndDispose() {
-		byte[] buf = this.buf;
+		byte[] buf = this.toByteArray();
 		this.dispose();
 		return buf;
 	}

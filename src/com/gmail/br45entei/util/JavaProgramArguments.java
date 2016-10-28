@@ -16,6 +16,9 @@ public final class JavaProgramArguments {
 	private static volatile File					classPathJar;
 	
 	public static final void initializeFromMainClass(Class<?> clazz, String[] args) {
+		if(instance != null) {
+			throw new IllegalStateException("This may only be called once!");
+		}
 		instance = new JavaProgramArguments(clazz, args);
 	}
 	
@@ -88,8 +91,12 @@ public final class JavaProgramArguments {
 		} else if(mainPackageName.equals(mainClassFileName)) {//-classPath was used
 			String currentDir = System.getProperty("user.dir");
 			String packageName = mainPackageName.replace(currentDir, "");
-			String filePath = FilenameUtils.normalize(currentDir + File.separator + ".." + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
+			String filePath = FilenameUtils.normalize(currentDir + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
 			classPathJar = new File(filePath);
+			if(!classPathJar.exists()) {
+				filePath = FilenameUtils.normalize(currentDir + File.separator + ".." + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
+				classPathJar = new File(filePath);
+			}
 			System.out.println("Launcher was started in a development environment.(Hi there!)");
 			startupCommand = (classPathCmdLine.isEmpty() ? "-classpath " : "") + mainClass;
 		}
