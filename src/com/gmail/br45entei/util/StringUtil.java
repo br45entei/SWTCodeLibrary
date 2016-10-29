@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
@@ -783,6 +785,19 @@ public strictfp class StringUtil {
 	 * @return The given text with its first letter capitalized */
 	public static final String captializeFirstLetter(String str) {
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
+	}
+	
+	public static final <T> T findClosestMatch(Collection<T> collection, T target) {
+		int distance = Integer.MAX_VALUE;
+		T closest = null;
+		for(T compareObject : collection) {
+			int currentDistance = StringUtils.getLevenshteinDistance(compareObject.toString(), target.toString());
+			if(currentDistance < distance) {
+				distance = currentDistance;
+				closest = compareObject;
+			}
+		}
+		return closest;
 	}
 	
 }

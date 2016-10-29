@@ -6,6 +6,7 @@ import com.gmail.br45entei.data.OutputInputStream;
 import com.gmail.br45entei.data.Property;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,6 +14,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
@@ -58,7 +61,7 @@ public class FileTransfer {
 			if(fileSizeRead.startsWith("FILESIZE: ")) {
 				if(fileLastModRead.startsWith("FILELASTMOD: ")) {
 					String fileSize = fileSizeRead.substring("FILESIZE: ".length());
-					if(StringUtil.isStrInt(fileSize)) {
+					if(StringUtil.isStrInt(fileSize)) {//XXX prevents reading files bigger than Integer.MAX_VALUE, i know... need a better way to read file data in case this is ever needed
 						String fileLastMod = fileLastModRead.substring("FILELASTMOD: ".length());
 						if(StringUtil.isStrLong(fileLastMod)) {
 							lastModified = Long.valueOf(fileLastMod).longValue();
@@ -135,6 +138,44 @@ public class FileTransfer {
 		if(progress != null) {
 			progress.setValue(Double.valueOf(1.0D));
 		}
+	}
+	
+	public static final FileData readFile(File file) throws IOException {
+		DisposableByteArrayOutputStream baos = new DisposableByteArrayOutputStream();
+		final String fileName = file.getName();
+		final String fileSize = Long.toString(file.length());
+		final FileInputStream fis = new FileInputStream(file);
+		final long lastModified = Files.getLastModifiedTime(Paths.get(file.toURI())).toMillis();
+		if(StringUtil.isStrInt(fileSize)) {//XXX prevents reading files bigger than Integer.MAX_VALUE, i know... need a better way to read file data in case this is ever needed
+			final int size = Integer.parseInt(fileSize);
+			int count = 0;
+			byte[] buf = new byte[4096];
+			int remaining = size - count;
+			int read = fis.read(buf, 0, Math.min(buf.length, remaining));
+			count += read;
+			baos.write(buf, 0, read);
+			remaining = size - count;
+			while(remaining > 0) {
+				remaining = size - count;
+				read = fis.read(buf, 0, Math.min(buf.length, remaining));
+				if(read == -1) {
+					break;
+				}
+				count += read;
+				baos.write(buf, 0, read);
+				remaining = size - count;
+			}
+		}
+		FileData data = new FileData();
+		data.name = fileName;
+		data.data = baos.toByteArray();
+		data.lastModified = lastModified == -1L ? System.currentTimeMillis() : lastModified;
+		baos.close();
+		try {
+			fis.close();
+		} catch(IOException ignored) {
+		}
+		return data;
 	}
 	
 }
