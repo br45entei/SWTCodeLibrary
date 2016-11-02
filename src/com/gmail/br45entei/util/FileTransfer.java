@@ -16,6 +16,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
@@ -29,12 +30,48 @@ public class FileTransfer {
 			DisposableByteArrayInputStream in = stream.asInputStream();
 			final int before = in.available();
 			FileData data = readFile(in);
+			System.out.println("hash: " + hashBytes(data.data));
 			System.out.println("Size: " + data.getSize() + "(available before: " + before + "; available now: " + in.available() + "); Name: " + data.name);
 			System.out.flush();
 			in.close();
 			stream.close();
 		} catch(Throwable e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public static final String hashBytes(byte[] data) {
+		final MessageDigest hashSum;
+		try {
+			hashSum = MessageDigest.getInstance("SHA-256");
+			hashSum.update(data);
+			byte[] mdBytes = hashSum.digest();
+			StringBuffer hexString = new StringBuffer();
+			for(int i = 0; i < mdBytes.length; i++) {
+				hexString.append(Integer.toHexString(0xFF & mdBytes[i]));
+			}
+			return hexString.toString();
+		} catch(Throwable e) {
+			e.printStackTrace();
+			return "null";
+		}
+	}
+	
+	public static final String hashStream(InputStream in) {
+		try {
+			return hashBytes(readFile(in).data);
+		} catch(Throwable e) {
+			e.printStackTrace();
+			return "null";
+		}
+	}
+	
+	public static final String hashFile(File file) {
+		try {
+			return hashBytes(readFile(file).data);
+		} catch(Throwable e) {
+			e.printStackTrace();
+			return "null";
 		}
 	}
 	
@@ -50,6 +87,10 @@ public class FileTransfer {
 	}
 	
 	public static final FileData readFile(InputStream in) throws IOException {
+		return readFile(in, null);
+	}
+	
+	public static final FileData readFile(InputStream in, Property<Double> progress) throws IOException {
 		DisposableByteArrayOutputStream baos = new DisposableByteArrayOutputStream();
 		final String fileNameRead = StringUtil.readLine(in);
 		final String fileSizeRead = StringUtil.readLine(in);
@@ -73,6 +114,9 @@ public class FileTransfer {
 							count += read;
 							baos.write(buf, 0, read);
 							remaining = size - count;
+							if(progress != null) {
+								progress.setValue(Double.valueOf(((count + 0.00D) / (size + 0.00D) * 100.0D)));
+							}
 							while(remaining > 0) {
 								remaining = size - count;
 								read = in.read(buf, 0, Math.min(buf.length, remaining));
@@ -82,6 +126,9 @@ public class FileTransfer {
 								count += read;
 								baos.write(buf, 0, read);
 								remaining = size - count;
+								if(progress != null) {
+									progress.setValue(Double.valueOf(((count + 0.00D) / (size + 0.00D) * 100.0D)));
+								}
 							}
 						} else {
 							//System.err.println("fileLastMod isLong: " + StringUtil.isStrLong(fileLastMod) + ": " + fileLastMod);
@@ -103,6 +150,9 @@ public class FileTransfer {
 		data.data = baos.toByteArray();
 		data.lastModified = lastModified == -1L ? System.currentTimeMillis() : lastModified;
 		baos.close();
+		if(progress != null) {
+			progress.setValue(Double.valueOf(100.0D));
+		}
 		return data;
 	}
 	

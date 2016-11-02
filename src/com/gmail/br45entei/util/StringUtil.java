@@ -1,5 +1,9 @@
 package com.gmail.br45entei.util;
 
+import com.gmail.br45entei.data.DisposableByteArrayInputStream;
+import com.gmail.br45entei.data.Property;
+import com.gmail.br45entei.swt.Functions;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -81,6 +85,60 @@ public strictfp class StringUtil {
 		}
 		String rtrn = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
+	}
+	
+	public static final String readLine(InputStream in, long timeout) throws IOException {
+		final Property<String> data = new Property<>("Data");
+		final Property<IOException> exception = new Property<>("IOException");
+		Thread readThread = new Thread(new Runnable() {
+			@Override
+			public final void run() {
+				try {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					int read;
+					while((read = in.read()) != -1) {
+						String s = new String(new byte[] {(byte) read});
+						if(s.equals("\n")) {
+							break;
+						}
+						baos.write(read);
+					}
+					if(baos.size() == 0 && read == -1) {
+						data.setValue(null);
+						return;
+					}
+					String rtrn = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+					data.setValue(rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn);
+				} catch(IOException e) {
+					exception.setValue(e);
+				}
+			}
+		});
+		readThread.setDaemon(true);
+		readThread.start();
+		final long startTime = System.currentTimeMillis();
+		if(!readThread.isAlive()) {
+			while(!readThread.isAlive()) {
+				Functions.sleep(1L);
+			}
+		}
+		boolean timedout = false;
+		long elapsedTime;
+		while(readThread.isAlive()) {
+			if(exception.getValue() != null) {
+				break;
+			}
+			elapsedTime = System.currentTimeMillis() - startTime;
+			if(elapsedTime >= timeout) {
+				timedout = true;
+				readThread.interrupt();
+				break;
+			}
+		}
+		if(!timedout && exception.getValue() != null) {
+			throw exception.getValue();
+		}
+		return data.getValue();
 	}
 	
 	/** @return Whether or not a 64 bit system was detected */
@@ -178,6 +236,18 @@ public strictfp class StringUtil {
 		//long millis = -1L + YEAR;
 		long millis = 245981L;//0L;
 		System.out.println(StringUtil.getElapsedTime(millis));
+		DisposableByteArrayInputStream in = new DisposableByteArrayInputStream("Hello,\r\nWorld!\r\nThis\r\nString\r\nHas\r\nMany\r\nLines!".getBytes(StandardCharsets.UTF_8));
+		try {
+			long startTime = System.currentTimeMillis();
+			String line = readLine(in);
+			System.out.println(getElapsedTime(System.currentTimeMillis() - startTime, true) + ": " + line);
+			startTime = System.currentTimeMillis();
+			line = readLine(in, 2000);
+			System.out.println(getElapsedTime(System.currentTimeMillis() - startTime, true) + ": " + line);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		in.close();
 	}
 	
 	public static final int getLengthOfLongestLineInStr(String str) {

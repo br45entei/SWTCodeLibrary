@@ -126,7 +126,7 @@ public class Functions {
 		Rectangle rect = shell.getBounds();
 		int x = bounds.x + (bounds.width - rect.width) / 2;
 		int y = bounds.y + (bounds.height - rect.height) / 2;
-		shell.setLocation(x, y);
+		setLocationFor(shell, new Point(x, y));//shell.setLocation(x, y);
 	}
 	
 	public static final void centerShell2OnShell1(Shell shell1, Shell shell2) {
@@ -134,7 +134,7 @@ public class Functions {
 		Rectangle rect = shell2.getBounds();
 		int x = bounds.x + (bounds.width - rect.width) / 2;
 		int y = bounds.y + (bounds.height - rect.height) / 2;
-		shell2.setLocation(x, y);
+		setLocationFor(shell2, new Point(x, y));//shell2.setLocation(x, y);
 	}
 	
 	public static final void main(String[] args) {
