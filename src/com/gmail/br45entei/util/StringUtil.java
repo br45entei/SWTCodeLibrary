@@ -49,6 +49,25 @@ public strictfp class StringUtil {
 	
 	public static final DecimalFormat decimal = new DecimalFormat("#0.00");
 	
+	public static final String makeStringFilesystemSafe(String s) {
+		char escape = '%'; // ... or some other legal char.
+		int len = s.length();
+		StringBuilder sb = new StringBuilder(len);
+		for(int i = 0; i < len; i++) {
+			char ch = s.charAt(i);
+			if(ch < ' ' || ch >= 0x7F || ch == '/' || ch == '\\' || ch == '?' || ch == ':' || ch == '"' || ch == '*' || ch == '|' || ch == '<' || ch == '>' || (ch == '.' && i == 0) || ch == escape) {
+				sb.append(escape);
+				if(ch < 0x10) {
+					sb.append('0');
+				}
+				sb.append(Integer.toHexString(ch));
+			} else {
+				sb.append(ch);
+			}
+		}
+		return sb.toString();
+	}
+	
 	static {
 		decimal.setRoundingMode(RoundingMode.HALF_EVEN);
 	}
@@ -175,16 +194,16 @@ public strictfp class StringUtil {
 		return s.contains("win") ? EnumOS.WINDOWS : (s.contains("mac") ? EnumOS.OSX : (s.contains("solaris") ? EnumOS.SOLARIS : (s.contains("sunos") ? EnumOS.SOLARIS : (s.contains("linux") ? EnumOS.LINUX : (s.contains("unix") ? EnumOS.LINUX : EnumOS.UNKNOWN)))));
 	}
 	
-	private static final SecureRandom	secureRandom	= new SecureRandom();
-	private static final Random			random			= new Random();
+	private static final SecureRandom secureRandom = new SecureRandom();
+	private static final Random random = new Random();
 	
 	public static final int getRandomIntBetween(int min, int max) {
 		return random.nextInt(max - min) + min;
 	}
 	
-	public static final String		cacheValidatorTimePattern	= "EEE, dd MMM yyyy HH:mm:ss 'GMT'";
-	public static final Locale		cacheValidatorTimeLocale	= Locale.US;
-	public static final TimeZone	cacheValidatorTimeFormat	= TimeZone.getTimeZone("GMT");
+	public static final String cacheValidatorTimePattern = "EEE, dd MMM yyyy HH:mm:ss 'GMT'";
+	public static final Locale cacheValidatorTimeLocale = Locale.US;
+	public static final TimeZone cacheValidatorTimeFormat = TimeZone.getTimeZone("GMT");
 	
 	public static final String nextSessionId() {
 		return new BigInteger(130, secureRandom).toString(32);
@@ -314,6 +333,13 @@ public strictfp class StringUtil {
 	 * @return The resulting string */
 	public static String getSystemTime(boolean getTimeOnly, boolean fileSystemSafe, boolean milliseconds) {
 		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (milliseconds ? ".SSS" : "") : "HH:mm:ss" + (milliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (milliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (milliseconds ? ":SSS" : ""))).format(new Date());
+	}
+	
+	/** @param str The string to limit
+	 * @param limit The number of chars to limit to
+	 * @return The limited string */
+	public static String limitStringToNumOfChars(String str, int limit) {
+		return(str != null ? (str.length() >= 1 ? (str.substring(0, (str.length() >= limit ? limit : str.length()))) : "") : "");
 	}
 	
 	/** @param stackTraceElements The elements to convert
@@ -492,12 +518,9 @@ public strictfp class StringUtil {
 		int i = 0;
 		for(String element : array) {
 			if(i >= startIndex && i < endIndex) {
-				rtrn += element + c;
+				rtrn += element + (i + 1 == endIndex ? "" : c);
 			}
 			i++;
-		}
-		if(rtrn.length() > 1) {
-			rtrn = rtrn.substring(0, rtrn.length() - 1);
 		}
 		return rtrn;
 	}
@@ -546,6 +569,12 @@ public strictfp class StringUtil {
 	}
 	
 	/** @param time The time to convert
+	 * @return The result */
+	public static final String getTime(long time) {
+		return getTime(time, true);
+	}
+	
+	/** @param time The time to convert
 	 * @param getTimeOnly Whether or not the result should exclude the date
 	 * @return The result */
 	public static String getTime(long time, boolean getTimeOnly) {
@@ -557,8 +586,21 @@ public strictfp class StringUtil {
 	 * @param fileSystemSafe Whether or not the date should be file system
 	 *            safe(does nothing if the date is excluded)
 	 * @return The result */
-	public static String getTime(long time, boolean getTimeOnly, boolean fileSystemSafe) {
-		return new SimpleDateFormat(getTimeOnly ? "HH-mm-ss" : fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" : "MM/dd/yyyy'\t'h:mm:ss a").format(new Date(time));
+	public static final String getTime(long time, boolean getTimeOnly, boolean fileSystemSafe) {
+		return getTime(time, getTimeOnly, fileSystemSafe, false);
+	}
+	
+	/** @param time The time to convert
+	 * @param getTimeOnly Whether or not the result should exclude the date
+	 * @param fileSystemSafe Whether or not the date should be file system
+	 *            safe(does nothing if the date is excluded)
+	 * @param showMilliseconds Whether or not the results should include
+	 *            milliseconds
+	 * @return The result */
+	public static String getTime(long time, boolean getTimeOnly, boolean fileSystemSafe, boolean showMilliseconds) {
+		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (showMilliseconds ? ".SSS" : "") : "HH:mm:ss" + (showMilliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (showMilliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (showMilliseconds ? ":SSS" : ""))).format(new Date(time));
+		//final String millis = showMilliseconds ? (fileSystemSafe ? "." : ":") + "SSS" : "";
+		//return new SimpleDateFormat(getTimeOnly ? "HH-mm-ss" + millis : fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + millis : "MM/dd/yyyy'\t'h:mm:ss" + millis + " a").format(new Date(time));
 	}
 	
 	public static final SimpleDateFormat getCacheValidatorTimeFormat() {
@@ -749,31 +791,31 @@ public strictfp class StringUtil {
 	}
 	
 	/** Compare Strings in alphabetical order */
-	public static final Comparator<String>	ALPHABETICAL_ORDER	= new Comparator<String>() {
-																	@Override
-																	public int compare(String str1, String str2) {
-																		if(str1 == null || str2 == null) {
-																			return Integer.MAX_VALUE;
-																		}
-																		int res = String.CASE_INSENSITIVE_ORDER.compare(str1, str2);
-																		if(res == 0) {
-																			res = str1.compareTo(str2);
-																		}
-																		return res;
-																	}
-																};
+	public static final Comparator<String> ALPHABETICAL_ORDER = new Comparator<String>() {
+		@Override
+		public int compare(String str1, String str2) {
+			if(str1 == null || str2 == null) {
+				return Integer.MAX_VALUE;
+			}
+			int res = String.CASE_INSENSITIVE_ORDER.compare(str1, str2);
+			if(res == 0) {
+				res = str1.compareTo(str2);
+			}
+			return res;
+		}
+	};
 	
 	//==========================
-	protected static final long				MILLISECOND			= 1L;
-	protected static final long				SECOND				= 1000L;
-	protected static final long				MINUTE				= 60 * SECOND;
-	protected static final long				HOUR				= 60 * MINUTE;
-	protected static final long				DAY					= 24 * HOUR;
-	protected static final long				WEEK				= 7 * DAY;
-	protected static final long				YEAR				= 365 * DAY;														//(long) (365.2395 * DAY);
-	protected static final long				DECADE				= 10 * YEAR;
-	protected static final long				CENTURY				= 10 * DECADE;
-	protected static final long				MILLENNIUM			= 10 * CENTURY;
+	protected static final long MILLISECOND = 1L;
+	protected static final long SECOND = 1000L;
+	protected static final long MINUTE = 60 * SECOND;
+	protected static final long HOUR = 60 * MINUTE;
+	protected static final long DAY = 24 * HOUR;
+	protected static final long WEEK = 7 * DAY;
+	protected static final long YEAR = 365 * DAY; //(long) (365.2395 * DAY);
+	protected static final long DECADE = 10 * YEAR;
+	protected static final long CENTURY = 10 * DECADE;
+	protected static final long MILLENNIUM = 10 * CENTURY;
 	
 	/** @param millis The time in milliseconds
 	 * @return The time, in String format */
@@ -848,7 +890,7 @@ public strictfp class StringUtil {
 		rtrn = rtrn.endsWith("and ") ? rtrn.substring(0, rtrn.length() - 4).trim() : rtrn;
 		rtrn += (negative ? " Remaining" : "");
 		rtrn = rtrn.replace("  ", " ").trim();
-		return rtrn.trim().isEmpty() ? "0:00" : rtrn;
+		return rtrn.trim().isEmpty() ? "0:00" + (showMilliseconds ? ":000" : "") : rtrn;
 	}
 	
 	/** @param str The text to edit
