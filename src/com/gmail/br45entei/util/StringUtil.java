@@ -3,6 +3,7 @@ package com.gmail.br45entei.util;
 import com.gmail.br45entei.data.DisposableByteArrayInputStream;
 import com.gmail.br45entei.data.Property;
 import com.gmail.br45entei.swt.Functions;
+import com.gmail.br45entei.util.exception.ConnectionTimeoutException;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -29,7 +30,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -47,7 +48,16 @@ import org.apache.commons.lang3.StringUtils;
 @SuppressWarnings("javadoc")
 public strictfp class StringUtil {
 	
+	public static final String newline = System.getProperty("line.separator");
+	
 	public static final DecimalFormat decimal = new DecimalFormat("#0.00");
+	
+	public static final String urlPathToFileName(String path) {
+		String fileName = StringUtil.decodeHTML(path);
+		fileName = (fileName.contains("#") && fileName.lastIndexOf(".") < fileName.lastIndexOf("#")) ? fileName.substring(0, fileName.lastIndexOf("#")) : fileName;
+		fileName = fileName.contains("?") ? fileName.substring(0, fileName.indexOf("?")) : fileName;
+		return StringUtil.makeStringFilesystemSafe(FilenameUtils.getName(fileName.endsWith("/") && (fileName.indexOf("/") != fileName.lastIndexOf("/")) ? fileName.substring(0, fileName.length() - 1) : fileName));
+	}
 	
 	public static final String makeStringFilesystemSafe(String s) {
 		char escape = '%'; // ... or some other legal char.
@@ -106,6 +116,22 @@ public strictfp class StringUtil {
 		return rtrn.endsWith("\r") ? rtrn.substring(0, rtrn.length() - 1) : rtrn;
 	}
 	
+	public static final String replaceAllExceptFirstIn(String str, String target, String replacement) {
+		if(str == null || str.isEmpty() || target == null) {
+			return str;
+		}
+		int index = str.indexOf(target);
+		if(index == -1 || index == str.length() - 1) {
+			return str;
+		}
+		//System.err.println("index: " + index + "; str.length(): " + str.length());
+		String prefix = str.substring(0, index + 1);//should include target
+		//System.err.println("prefix: " + prefix);
+		String suffix = str.substring(index + 1);
+		//System.err.println("suffix: " + suffix + "; suffix replaced: " + suffix.replace(target, replacement));
+		return prefix + suffix.replace(target, replacement);
+	}
+	
 	public static final String readLine(InputStream in, long timeout) throws IOException {
 		final Property<String> data = new Property<>("Data");
 		final Property<IOException> exception = new Property<>("IOException");
@@ -142,7 +168,7 @@ public strictfp class StringUtil {
 			}
 		}
 		boolean timedout = false;
-		long elapsedTime;
+		long elapsedTime = 0L;
 		while(readThread.isAlive()) {
 			if(exception.getValue() != null) {
 				break;
@@ -153,6 +179,13 @@ public strictfp class StringUtil {
 				readThread.interrupt();
 				break;
 			}
+		}
+		if(timedout) {
+			String time = StringUtil.getElapsedTime(Math.max(elapsedTime, timeout), false);
+			if(time.startsWith("0:0")) {
+				time = time.substring("0:0".length());
+			}
+			throw new ConnectionTimeoutException("Connection timed out after " + time + " second" + (Math.max(elapsedTime, timeout) == 1000L ? "" : "s") + ".");
 		}
 		if(!timedout && exception.getValue() != null) {
 			throw exception.getValue();
@@ -267,6 +300,8 @@ public strictfp class StringUtil {
 			e.printStackTrace();
 		}
 		in.close();
+		System.out.println("\r\n\r\n\r\nTest: " + StringUtil.replaceAllExceptFirstIn("1021.", ".", "_"));
+		StringUtil.replaceAllExceptFirstIn(" ", null, null);
 	}
 	
 	public static final int getLengthOfLongestLineInStr(String str) {
@@ -354,6 +389,37 @@ public strictfp class StringUtil {
 		return str;
 	}
 	
+	/** @param stackTraceElements The elements to convert
+	 * @return The resulting string */
+	public static final String stackTraceCausedByElementsOnlyToStr(StackTraceElement[] stackTraceElements) {
+		String str = "";
+		if(stackTraceElements != null) {
+			for(StackTraceElement stackTrace : stackTraceElements) {
+				str += (!stackTrace.toString().startsWith("Caused By") ? "" : stackTrace.toString() + "\r\n");
+			}
+		}
+		return str;
+	}
+	
+	/** @param e The {@link Throwable} to convert
+	 * @return The resulting String */
+	public static final String throwableToStrNoStackTraces(Throwable e) {
+		if(e == null) {
+			return "null";
+		}
+		String str = e.getClass().getName() + ": ";
+		if((e.getMessage() != null) && !e.getMessage().isEmpty()) {
+			str += e.getMessage() + "\r\n";
+		} else {
+			str += "\r\n";
+		}
+		str += stackTraceCausedByElementsOnlyToStr(e.getStackTrace());
+		if(e.getCause() != null) {
+			str += "Caused by:\r\n" + throwableToStr(e.getCause());
+		}
+		return str;
+	}
+	
 	/** @param e The {@link Throwable} to convert
 	 * @return The resulting String */
 	public static final String throwableToStr(Throwable e) {
@@ -434,13 +500,21 @@ public strictfp class StringUtil {
 	/** @param array The list to read from
 	 * @param c The character to use as a separator
 	 * @return The resulting string */
-	public static final String stringArrayToString(char c, List<String> array) {
+	public static final String stringArrayToString(char c, Collection<String> array) {
+		return stringArrayToString(String.valueOf(c), array);
+	}
+	
+	/** @param array The list to read from
+	 * @param c The string to use as a separator
+	 * @return The resulting string */
+	public static final String stringArrayToString(String c, Collection<String> array) {
 		if(array == null) {
 			return "null";
 		}
 		String rtrn = "";
+		int index = 0;
 		for(String element : array) {
-			rtrn += element + c;
+			rtrn += element + ((++index) == array.size() ? "" : c);
 		}
 		return rtrn.trim();
 	}
@@ -601,6 +675,12 @@ public strictfp class StringUtil {
 		return new SimpleDateFormat(getTimeOnly ? (fileSystemSafe ? "HH.mm.ss" + (showMilliseconds ? ".SSS" : "") : "HH:mm:ss" + (showMilliseconds ? ":SSS" : "")) : (fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + (showMilliseconds ? ".SSS" : "") : "MM/dd/yyyy_HH:mm:ss" + (showMilliseconds ? ":SSS" : ""))).format(new Date(time));
 		//final String millis = showMilliseconds ? (fileSystemSafe ? "." : ":") + "SSS" : "";
 		//return new SimpleDateFormat(getTimeOnly ? "HH-mm-ss" + millis : fileSystemSafe ? "MM-dd-yyyy_HH.mm.ss" + millis : "MM/dd/yyyy'\t'h:mm:ss" + millis + " a").format(new Date(time));
+	}
+	
+	public static final String getCacheTimeFormatWith(long millis, String pattern, Locale locale, TimeZone zone) {
+		SimpleDateFormat rtrn = new SimpleDateFormat(pattern, locale);
+		rtrn.setTimeZone(zone);
+		return rtrn.format(new Date(millis));
 	}
 	
 	public static final SimpleDateFormat getCacheValidatorTimeFormat() {
@@ -819,14 +899,76 @@ public strictfp class StringUtil {
 	
 	/** @param millis The time in milliseconds
 	 * @return The time, in String format */
-	public static String getElapsedTime(long millis) {
-		return getElapsedTime(millis, false);
+	public static final String getElapsedTime(long millis) {
+		return getElapsedTime(millis, true);
+	}
+	
+	public static final String getElapsedTime(long millis, boolean bukkitFormat) {
+		return bukkitFormat ? getElapsedTimeInBukkitFormat(millis) : getElapsedTimeTraditional(millis, false);
+	}
+	
+	/** @param millis The time in milliseconds
+	 * @return The time, in String format */
+	public static String getElapsedTimeInBukkitFormat(long millis) {
+		//final long total = millis;
+		boolean negative = millis < 0;
+		if(negative) {
+			millis = Math.abs(millis);
+		}
+		String rtrn = "";
+		if(millis >= MILLENNIUM) {
+			long millenniums = millis / MILLENNIUM;
+			millis %= MILLENNIUM;
+			rtrn += millenniums + " Millennium" + (millenniums == 1 ? "" : "s") + " ";
+		}
+		if(millis >= CENTURY) {
+			long centuries = millis / CENTURY;
+			millis %= CENTURY;
+			rtrn += centuries + " Centur" + (centuries == 1 ? "y" : "ies") + " ";
+		}
+		if(millis >= YEAR) {
+			long years = millis / YEAR;
+			millis %= YEAR;
+			rtrn += years + " Year" + (years == 1 ? "" : "s") + " ";
+		}
+		if(millis >= WEEK) {
+			long weeks = millis / WEEK;
+			millis %= WEEK;
+			rtrn += weeks + " Week" + (weeks == 1 ? "" : "s") + " ";
+		}
+		if(millis >= DAY) {
+			long days = millis / DAY;
+			millis %= DAY;
+			rtrn += days + " Day" + (days == 1 ? "" : "s") + " and ";
+		}
+		long hours = 0L;
+		if(millis >= HOUR) {
+			hours = millis / HOUR;
+			millis %= HOUR;
+		}
+		long minutes = 0L;
+		if(millis >= MINUTE) {
+			minutes = millis / MINUTE;
+			millis %= MINUTE;
+		}
+		long seconds = 0L;
+		if(millis >= SECOND) {
+			seconds = millis / SECOND;
+			millis %= SECOND;
+		}
+		final String hourStr = (hours == 0 ? "" : hours + "h ");
+		final String minuteStr = (minutes == 0 ? "" : minutes + "m ");
+		final String secondStr = (seconds == 0 ? "" : seconds + "s");
+		rtrn += hourStr + minuteStr + secondStr;
+		rtrn += (negative ? " Remaining" : "");
+		rtrn = rtrn.replace("  ", " ").trim();
+		return rtrn.trim().isEmpty() ? "0s" : rtrn;
 	}
 	
 	/** @param millis The time in milliseconds
 	 * @param showMilliseconds Whether or not to show milliseconds(...:000)
 	 * @return The time, in String format */
-	public static String getElapsedTime(long millis, boolean showMilliseconds) {
+	public static String getElapsedTimeTraditional(long millis, boolean showMilliseconds) {
 		final long total = millis;
 		boolean negative = millis < 0;
 		if(negative) {

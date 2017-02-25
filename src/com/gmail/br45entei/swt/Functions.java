@@ -34,16 +34,17 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 /** @author Brian_Entei */
 @SuppressWarnings("javadoc")
 public class Functions {
 	
-	private static final char[]			ILLEGAL_CHARACTERS				= {'\n', '\r', '\t', '\0', '\f', '`', '?', '*', '<', '>', '|', '\"'};
-	private static final String[]		ILLEGAL_CHARACTER_REPLACEMENTS	= {"", "", "", "", "", "&#96;", "", "", "&lt;", "&gt;", "", "&quot;"};
+	private static final char[] ILLEGAL_CHARACTERS = {'\n', '\r', '\t', '\0', '\f', '`', '?', '*', '<', '>', '|', '\"'};
+	private static final String[] ILLEGAL_CHARACTER_REPLACEMENTS = {"", "", "", "", "", "&#96;", "", "", "&lt;", "&gt;", "", "&quot;"};
 	
-	private static final SecureRandom	random							= new SecureRandom();
-	private static final DecimalFormat	decimal							= new DecimalFormat("#0.00");
+	private static final SecureRandom random = new SecureRandom();
+	private static final DecimalFormat decimal = new DecimalFormat("#0.00");
 	
 	static {
 		Functions.decimal.setRoundingMode(RoundingMode.HALF_EVEN);
@@ -135,6 +136,10 @@ public class Functions {
 		int x = bounds.x + (bounds.width - rect.width) / 2;
 		int y = bounds.y + (bounds.height - rect.height) / 2;
 		setLocationFor(shell2, new Point(x, y));//shell2.setLocation(x, y);
+	}
+	
+	public static final Image[] getDefaultShellImages() {
+		return new Image[] {SWTResourceManager.getImage(Functions.class, "/assets/textures/title/Entei-16x16.png"), SWTResourceManager.getImage(Functions.class, "/assets/textures/title/Entei-32x32.png"), SWTResourceManager.getImage(Functions.class, "/assets/textures/title/Entei-64x64.png"), SWTResourceManager.getImage(Functions.class, "/assets/textures/title/Entei-128x128.png")};
 	}
 	
 	public static final void main(String[] args) {
@@ -468,6 +473,19 @@ public class Functions {
 		if(button != null && !button.isDisposed() && text != null) {
 			if(!text.equals(button.getText())) {
 				button.setText(text);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param control The control whose enabled state will be set
+	 * @param enabled The enable state to set
+	 * @return True if the control's enabled state was changed */
+	public static boolean setEnabledFor(Control control, boolean enabled) {
+		if(control != null && !control.isDisposed()) {
+			if(control.getEnabled() != enabled) {
+				control.setEnabled(enabled);
 				return true;
 			}
 		}

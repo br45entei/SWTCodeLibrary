@@ -12,6 +12,18 @@ public class AddressUtil {
 	
 	private static String ipAddress = null;
 	
+	public static final boolean isAddressValid(String address) {
+		try {
+			return InetAddress.getByName(address) != null;
+		} catch(UnknownHostException ignored) {
+			return false;
+		}
+	}
+	
+	public static final boolean isPortInRange(int port) {
+		return port > 0 && port <= 65535;
+	}
+	
 	public static final String getValidHostFor(String host) {
 		if(host == null || host.trim().isEmpty()) {
 			return getIp();

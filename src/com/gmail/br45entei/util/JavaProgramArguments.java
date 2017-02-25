@@ -94,7 +94,11 @@ public final class JavaProgramArguments {
 			String filePath = FilenameUtils.normalize(currentDir + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
 			classPathJar = new File(filePath);
 			if(!classPathJar.exists()) {
-				filePath = FilenameUtils.normalize(currentDir + File.separator + ".." + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
+				filePath = FilenameUtils.normalize(currentDir + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
+				File check = new File(filePath);
+				if(!check.isFile()) {
+					filePath = FilenameUtils.normalize(currentDir + File.separator + ".." + File.separator + "bin" + File.separator + packageName.replace(".", File.separator) + File.separator + clazz.getSimpleName() + ".class");
+				}
 				classPathJar = new File(filePath);
 			}
 			System.out.println("Launcher was started in a development environment.(Hi there!)");

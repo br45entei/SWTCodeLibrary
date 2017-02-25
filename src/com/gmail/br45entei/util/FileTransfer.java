@@ -76,9 +76,9 @@ public class FileTransfer {
 	}
 	
 	public static final class FileData {
-		public volatile String	name;
-		public volatile byte[]	data;
-		public volatile long	lastModified;
+		public volatile String name;
+		public volatile byte[] data;
+		public volatile long lastModified;
 		
 		public final int getSize() {
 			return this.data != null ? this.data.length : -1;
@@ -156,20 +156,51 @@ public class FileTransfer {
 		return data;
 	}
 	
-	public static final void sendFile(File file, OutputStream outStream, Property<Double> progress) throws IOException {
+	public static final void sendFile(File file, final OutputStream outStream, Property<Double> progress) throws IOException {
+		sendFile(file, new SynchronizedWritable() {
+			@Override
+			public void writeSynchronized(byte[] b) throws IOException {
+				synchronized(outStream) {
+					outStream.write(b);
+				}
+			}
+			
+			@Override
+			public void writeSynchronized(byte[] b, int off, int len) throws IOException {
+				synchronized(outStream) {
+					outStream.write(b, off, len);
+				}
+			}
+			
+			@Override
+			public PrintWriter getPrintWriterUTF8AutoFlush() {
+				return new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+			}
+			
+			@Override
+			public void flushSynchronized() throws IOException {
+				synchronized(outStream) {
+					outStream.flush();
+				}
+			}
+		}, progress);
+	}
+	
+	public static final void sendFile(File file, SynchronizedWritable writable, Property<Double> progress) throws IOException {
 		if(progress != null) {
 			progress.setValue(Double.valueOf(0.0D));
 		}
 		URLConnection url = file.toURI().toURL().openConnection();
 		int fileSize = url.getContentLength();
 		InputStream fis = url.getInputStream();
-		PrintWriter pr = new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+		@SuppressWarnings("resource")
+		PrintWriter pr = writable.getPrintWriterUTF8AutoFlush();//new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
 		pr.println("FILENAME: " + file.getName());
 		pr.println("FILESIZE: " + fileSize);
 		pr.println("FILELASTMOD: " + url.getLastModified());
 		//System.out.println("Sending file size: " + fileSize);
 		pr.flush();
-		outStream.flush();
+		writable.flushSynchronized();//outStream.flush();
 		
 		long sent = 0;
 		final double fileSizeD = fileSize + 0.00D;
@@ -177,13 +208,13 @@ public class FileTransfer {
 		byte[] b = new byte[4096];
 		int len;
 		while((len = fis.read(b)) >= 0) {
-			outStream.write(b, 0, len);
+			writable.writeSynchronized(b, 0, len);//outStream.write(b, 0, len);
 			sent += len;
 			if(progress != null) {
 				progress.setValue(Double.valueOf(sent / fileSizeD));
 			}
 		}
-		outStream.flush();
+		writable.flushSynchronized();//outStream.flush();
 		fis.close();
 		if(progress != null) {
 			progress.setValue(Double.valueOf(1.0D));
@@ -226,6 +257,18 @@ public class FileTransfer {
 		} catch(IOException ignored) {
 		}
 		return data;
+	}
+	
+	public static interface SynchronizedWritable {
+		
+		public PrintWriter getPrintWriterUTF8AutoFlush();
+		
+		public void writeSynchronized(byte[] b) throws IOException;
+		
+		public void writeSynchronized(byte[] b, int off, int len) throws IOException;
+		
+		public void flushSynchronized() throws IOException;
+		
 	}
 	
 }
