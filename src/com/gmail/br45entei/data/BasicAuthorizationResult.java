@@ -11,8 +11,8 @@ import org.apache.commons.codec.binary.Base64;
 
 @SuppressWarnings("javadoc")
 public final class BasicAuthorizationResult {
-	private static final ConcurrentHashMap<String, SessionID>	sessionIDs		= new ConcurrentHashMap<>();
-	private static final ConcurrentLinkedQueue<SessionID>		usedSessionIDs	= new ConcurrentLinkedQueue<>();
+	private static final ConcurrentHashMap<String, SessionID> sessionIDs = new ConcurrentHashMap<>();
+	private static final ConcurrentLinkedQueue<SessionID> usedSessionIDs = new ConcurrentLinkedQueue<>();
 	
 	private static final SessionID getSessionIDForClient(String clientIP, String domain) {
 		return sessionIDs.get(clientIP + ":" + domain.toLowerCase().trim());
@@ -85,9 +85,9 @@ public final class BasicAuthorizationResult {
 		return false;
 	}
 	
-	private final boolean	passed;
-	public final String		resultingAuthenticationHeader;
-	public final String		authorizedCookie;
+	private final boolean passed;
+	public final String resultingAuthenticationHeader;
+	public final String authorizedCookie;
 	
 	public static final BasicAuthorizationResult authenticateBasic(final String clientAuthHeader, String realm, String username, String password) {
 		if(realm == null) {
@@ -113,6 +113,19 @@ public final class BasicAuthorizationResult {
 		String clientUser = creds.length == 2 ? creds[0] : "";
 		String clientPass = creds.length == 2 ? creds[1] : "";
 		return new BasicAuthorizationResult(username.equalsIgnoreCase(clientUser) && password.equals(clientPass), authHeader, null);
+	}
+	
+	public static final String[] getUsernamePasswordFromBasicAuthorizationHeader(final String authHeader) {
+		String clientResponse;
+		try {
+			clientResponse = new String(Base64.decodeBase64(authHeader.replace("Basic", "").trim()));
+		} catch(IllegalArgumentException ignored) {
+			clientResponse = "";
+		}
+		String[] creds = clientResponse.split(":");
+		String clientUser = creds.length == 2 ? creds[0] : "";
+		String clientPass = creds.length == 2 ? creds[1] : "";
+		return new String[] {clientUser, clientPass};
 	}
 	
 	public static final BasicAuthorizationResult authenticateBasic(final String clientAuthHeader, String realm, String username, String password, final String clientIP, final String domain, ArrayList<String> cookies) {
@@ -194,9 +207,9 @@ public final class BasicAuthorizationResult {
 	
 	private static final class SessionID {
 		
-		protected volatile boolean	rejectNextAttempt	= true;
-		public final String			id;
-		private volatile int		timesUsed			= 0;
+		protected volatile boolean rejectNextAttempt = true;
+		public final String id;
+		private volatile int timesUsed = 0;
 		
 		public final SessionID incrementTimesUsed() {
 			this.timesUsed++;

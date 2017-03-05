@@ -111,7 +111,7 @@ public abstract class AbstractApplySettingsDialog extends AbstractDialog {
 	}
 	
 	@Override
-	protected boolean mainLoop(Display display) {
+	protected boolean mainLoop(Display display) {//Move these to AbstractDialog! That way you don't have to copy/paste the same code EVERY time you make a new dialog!
 		if(this._runClock(display)) {
 			this.updateUI();
 			return this._runClock(display);

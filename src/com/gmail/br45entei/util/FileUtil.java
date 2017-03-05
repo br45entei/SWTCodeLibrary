@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.io.FileDeleteStrategy;
@@ -73,6 +76,42 @@ public class FileUtil {
 			}
 			return baos.toByteArray();
 		}
+	}
+	
+	/** @param file The file whose last modified time will be returned
+	 * @return The file's last modified attribute
+	 * @throws IOException Thrown if an I/O exception occurs */
+	public static final long getLastModified(File file) throws IOException {
+		return Files.getLastModifiedTime(file.toPath()).toMillis();
+	}
+	
+	/** @param file The file or folder whose size(content length, number of bytes, etc....) will be returned
+	 * @return The file or folder's size(folders will usually just return {@code 0}; to get a folder's size, see {@link #getSizeDeep(Path)}.)
+	 * @throws IOException if an I/O error occurs */
+	public static final long getSize(File file) throws IOException {
+		return Files.size(file.toPath());
+	}
+	
+	/** @param startPath The file or folder whose size(content length, number of bytes, etc....) will be returned
+	 * @return The file or folder's size
+	 * @throws IOException if an I/O error is thrown by a visitor method */
+	public static final long getSizeDeep(Path startPath) throws IOException {
+		final AtomicLong size = new AtomicLong(0);
+		Files.walkFileTree(startPath, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				size.addAndGet(attrs.size());
+				return FileVisitResult.CONTINUE;
+			}
+			
+			@Override
+			public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+				// Skip folders that can't be traversed
+				//System.out.println("skipped: " + file + "e=" + exc);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		return size.get();
 	}
 	
 	/** @param file The file to rename

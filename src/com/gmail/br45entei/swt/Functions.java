@@ -25,6 +25,9 @@ import java.util.regex.Pattern;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -427,6 +430,28 @@ public class Functions {
 		return false;
 	}
 	
+	public static final boolean equals(Color color1, Color color2) {
+		if(color1 == null || color2 == null) {
+			if(color1 == null && color2 == null) {
+				return true;
+			}
+			return false;
+		}
+		return color1.getBlue() == color2.getBlue() && color1.getGreen() == color2.getGreen() && color1.getRed() == color2.getRed();
+	}
+	
+	public static void overrideBackgroundColorFor(Control obj, Color backgroundColor) {
+		obj.addPaintListener(new PaintListener() {
+			@Override
+			public void paintControl(PaintEvent event) {
+				obj.setBackground(backgroundColor);//obj.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+				org.eclipse.swt.graphics.Pattern pattern = new org.eclipse.swt.graphics.Pattern(event.gc.getDevice(), 0, 0, 0, 100, backgroundColor, 230, backgroundColor, 230);//org.eclipse.swt.graphics.Pattern pattern = new org.eclipse.swt.graphics.Pattern(event.gc.getDevice(), 0, 0, 0, 100, event.gc.getDevice().getSystemColor(SWT.COLOR_GRAY), 230, event.gc.getDevice().getSystemColor(SWT.COLOR_BLACK), 230);
+				event.gc.setBackgroundPattern(pattern);
+				event.gc.fillGradientRectangle(0, 0, obj.getBounds().width, obj.getBounds().height, true);
+			}
+		});
+	}
+	
 	/** @param shell The shell whose text will be set
 	 * @param text The text to set
 	 * @return True if the text was changed */
@@ -473,6 +498,19 @@ public class Functions {
 		if(button != null && !button.isDisposed() && text != null) {
 			if(!text.equals(button.getText())) {
 				button.setText(text);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/** @param control The control whose visible state will be set
+	 * @param visible The visible state to set
+	 * @return True if the control's visible state was changed */
+	public static boolean setVisibleFor(Control control, boolean visible) {
+		if(control != null && !control.isDisposed()) {
+			if(control.isVisible() != visible) {
+				control.setVisible(visible);
 				return true;
 			}
 		}

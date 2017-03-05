@@ -47,7 +47,7 @@ public class DualPrintWriter extends UnlockedWriter {
 	 * <code>PrintWriter</code>.
 	 *
 	 * @since 1.2 */
-	protected UnlockedWriter out;
+	protected volatile UnlockedWriter out;
 	protected final OutputStream underlyingOut;
 	
 	/** @return The underlying OutputStream for this Writer */
@@ -62,9 +62,18 @@ public class DualPrintWriter extends UnlockedWriter {
 	}
 	
 	private final boolean autoFlush;
-	private boolean trouble = false;
+	private volatile boolean trouble = false;
 	private Formatter formatter;
 	private PrintStream psOut = null;
+	
+	/** @return The object used to synchronize operations on this stream. For
+	 *         efficiency, a character-stream object may use an object other than
+	 *         itself to protect critical sections. A subclass should therefore use
+	 *         the object in this field rather than <tt>this</tt> or a synchronized
+	 *         method. */
+	public final Object getSynchronizationLock() {
+		return this.lock;
+	}
 	
 	/** Line separator string. This is the value of the line.separator
 	 * property at the moment that the stream was created. */
@@ -335,6 +344,11 @@ public class DualPrintWriter extends UnlockedWriter {
 		} catch(IOException x) {
 			this.trouble = true;
 		}
+	}
+	
+	/** @return This stream's error state <b><u>WITHOUT ANY FLUSHING OMFG</u></b> */
+	public final boolean getTrouble() {
+		return this.trouble;
 	}
 	
 	/** Flushes the stream if it's not closed and checks its error state.

@@ -128,6 +128,16 @@ public class LogUtils {
 		LogUtils.secondaryErr = printStream;
 	}
 	
+	/** @return The secondary PrintStream. */
+	public static final PrintStream getSecondaryOut() {
+		return LogUtils.secondaryOut;
+	}
+	
+	/** @return The secondary error PrintStream. */
+	public static final PrintStream getSecondaryErr() {
+		return LogUtils.secondaryErr;
+	}
+	
 	/** @return The tertiary PrintStream. */
 	public static final PrintStream getTertiaryOut() {
 		return LogUtils.tertiaryOut;

@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -129,10 +130,10 @@ public strictfp class StringUtil {
 		//System.err.println("prefix: " + prefix);
 		String suffix = str.substring(index + 1);
 		//System.err.println("suffix: " + suffix + "; suffix replaced: " + suffix.replace(target, replacement));
-		return prefix + suffix.replace(target, replacement);
+		return prefix + suffix.replaceAll(Pattern.quote(target), Matcher.quoteReplacement(replacement == null ? "" : replacement));
 	}
 	
-	public static final String readLine(InputStream in, long timeout) throws IOException {
+	public static final String readLine(InputStream in, long timeout) throws ConnectionTimeoutException, IOException {
 		final Property<String> data = new Property<>("Data");
 		final Property<IOException> exception = new Property<>("IOException");
 		Thread readThread = new Thread(new Runnable() {
@@ -234,9 +235,37 @@ public strictfp class StringUtil {
 		return random.nextInt(max - min) + min;
 	}
 	
+	public static final int getSecureRandomIntBetween(int min, int max) {
+		return secureRandom.nextInt(max - min) + min;
+	}
+	
+	public static final boolean getSecureRandomBoolean() {
+		return getSecureRandomIntBetween(0, 2) == 1;
+	}
+	
 	public static final String cacheValidatorTimePattern = "EEE, dd MMM yyyy HH:mm:ss 'GMT'";
 	public static final Locale cacheValidatorTimeLocale = Locale.US;
 	public static final TimeZone cacheValidatorTimeFormat = TimeZone.getTimeZone("GMT");
+	
+	public static final String generateRandomChars(int length) {
+		return generateRandomChars(length, true);
+	}
+	
+	public static final String generateRandomChars(int length, boolean alphanumeric) {
+		final int upperCharMin = 'A' + 0;//'A' is 65.
+		final int upperCharMax = 'Z' + 0;//'Z' is 90.
+		final int lowerCharMin = 'a' + 0;//'a' is 97.
+		final int lowerCharMax = 'z' + 0;//'z' is 122.
+		final int symMin = alphanumeric ? 48 : 32;//32 is space, everything below is system characters etc. 48 is '0', 57 is '9'.
+		final int symMax = alphanumeric ? 57 : upperCharMin - 1;//this is 64.
+		StringBuilder sb = new StringBuilder(length);
+		for(int i = 0; i < length; i++) {
+			boolean letterOrSymbol = getSecureRandomBoolean();
+			boolean lowerCase = letterOrSymbol ? getSecureRandomBoolean() : false;
+			sb.append((char) getSecureRandomIntBetween(letterOrSymbol ? (lowerCase ? lowerCharMin : upperCharMin) : symMin, letterOrSymbol ? (lowerCase ? lowerCharMax : upperCharMax) : symMax));
+		}
+		return sb.toString();
+	}
 	
 	public static final String nextSessionId() {
 		return new BigInteger(130, secureRandom).toString(32);
@@ -301,7 +330,9 @@ public strictfp class StringUtil {
 		}
 		in.close();
 		System.out.println("\r\n\r\n\r\nTest: " + StringUtil.replaceAllExceptFirstIn("1021.", ".", "_"));
-		StringUtil.replaceAllExceptFirstIn(" ", null, null);
+		System.out.println("\r\nTest_2: " + StringUtil.replaceAllExceptFirstIn("s p", " ", null));
+		String check = StringUtil.generateRandomChars(6, false);
+		System.out.println("generated random string with specifyable length: " + check + "\r\nlength: " + check.length());
 	}
 	
 	public static final int getLengthOfLongestLineInStr(String str) {
@@ -545,7 +576,7 @@ public strictfp class StringUtil {
 	 * @param startIndex The index to start at
 	 * @return The resulting string */
 	public static final String stringArrayToString(String[] array, char c, int startIndex) {
-		return stringArrayToString(array, c + "", startIndex);
+		return stringArrayToString(array, String.valueOf(c), startIndex);
 	}
 	
 	/** @param array The array/list/strings to read from
@@ -1035,9 +1066,31 @@ public strictfp class StringUtil {
 		return rtrn.trim().isEmpty() ? "0:00" + (showMilliseconds ? ":000" : "") : rtrn;
 	}
 	
+	public static final String capitalizeFirstLetterOfEachWordIn(String str) {
+		if(str.contains(" ")) {
+			StringBuilder sb = new StringBuilder(str.length());
+			int workingIndex = 0;
+			while(true) {
+				int nextIndex = str.substring(workingIndex).indexOf(" ");
+				if(nextIndex <= workingIndex) {
+					nextIndex = -1;
+				}
+				String current = capitalizeFirstLetter((nextIndex == -1 ? str.substring(workingIndex + 1) : str.substring(workingIndex, nextIndex)).toLowerCase());
+				sb.append(current);
+				sb.append(nextIndex == -1 ? "" : " ");
+				workingIndex += current.length();
+				if(nextIndex == -1) {
+					break;
+				}
+			}
+			return sb.toString();
+		}
+		return capitalizeFirstLetter(str.toLowerCase());
+	}
+	
 	/** @param str The text to edit
 	 * @return The given text with its first letter capitalized */
-	public static final String captializeFirstLetter(String str) {
+	public static final String capitalizeFirstLetter(String str) {
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
 	

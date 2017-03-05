@@ -9,10 +9,18 @@
 	</classpathentry>
 	<classpathentry kind="src" path="apacheCommonsResources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt_x86_64"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_101_x86"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_101_x64"/>
+	<classpathentry kind="lib" path="E:/Java/Libraries/mockito/byte-buddy-1.6.9.jar"/>
+	<classpathentry kind="lib" path="E:/Java/Libraries/mockito/byte-buddy-agent-1.6.9.jar"/>
+	<classpathentry kind="lib" path="E:/Java/Libraries/mockito/mockito-core-2.7.13.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://static.javadoc.io/org.mockito/mockito-core/2.7.13/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="E:/Java/Libraries/mockito/objenesis-2.5.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

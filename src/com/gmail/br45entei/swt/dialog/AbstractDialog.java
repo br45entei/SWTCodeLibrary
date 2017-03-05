@@ -15,7 +15,7 @@ public abstract class AbstractDialog extends Dialog {
 	/** The user's response to the dialog, or
 	 * {@link Response#NO_RESPONSE} if the dialog was left unanswered,
 	 * was closed programmatically, etc. */
-	public volatile Response response;
+	public volatile Response response = Response.NO_RESPONSE;
 	
 	/** @param parent This dialog's parent shell */
 	public AbstractDialog(Shell parent) {

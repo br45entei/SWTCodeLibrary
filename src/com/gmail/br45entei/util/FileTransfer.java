@@ -4,14 +4,14 @@ import com.gmail.br45entei.data.DisposableByteArrayInputStream;
 import com.gmail.br45entei.data.DisposableByteArrayOutputStream;
 import com.gmail.br45entei.data.OutputInputStream;
 import com.gmail.br45entei.data.Property;
+import com.gmail.br45entei.util.writer.DualPrintWriter;
+import com.gmail.br45entei.util.writer.UnlockedOutputStreamWriter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -157,36 +157,34 @@ public class FileTransfer {
 	}
 	
 	public static final void sendFile(File file, final OutputStream outStream, Property<Double> progress) throws IOException {
-		sendFile(file, new SynchronizedWritable() {
+		sendFile(file, new Writable() {
+			private final DualPrintWriter pr = new DualPrintWriter(new UnlockedOutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+			
 			@Override
-			public void writeSynchronized(byte[] b) throws IOException {
+			public void write(byte[] b) throws IOException {
 				synchronized(outStream) {
 					outStream.write(b);
 				}
 			}
 			
 			@Override
-			public void writeSynchronized(byte[] b, int off, int len) throws IOException {
-				synchronized(outStream) {
-					outStream.write(b, off, len);
-				}
+			public void write(byte[] b, int off, int len) throws IOException {
+				outStream.write(b, off, len);
 			}
 			
 			@Override
-			public PrintWriter getPrintWriterUTF8AutoFlush() {
-				return new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+			public DualPrintWriter getPrintWriterUTF8AutoFlush() {
+				return this.pr;
 			}
 			
 			@Override
-			public void flushSynchronized() throws IOException {
-				synchronized(outStream) {
-					outStream.flush();
-				}
+			public void flush() throws IOException {
+				outStream.flush();
 			}
 		}, progress);
 	}
 	
-	public static final void sendFile(File file, SynchronizedWritable writable, Property<Double> progress) throws IOException {
+	public static final void sendFile(File file, Writable writable, Property<Double> progress) throws IOException {
 		if(progress != null) {
 			progress.setValue(Double.valueOf(0.0D));
 		}
@@ -194,13 +192,14 @@ public class FileTransfer {
 		int fileSize = url.getContentLength();
 		InputStream fis = url.getInputStream();
 		@SuppressWarnings("resource")
-		PrintWriter pr = writable.getPrintWriterUTF8AutoFlush();//new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+		DualPrintWriter pr = writable.getPrintWriterUTF8AutoFlush();//new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+		//pr.setLineSeparator("\r\n");
 		pr.println("FILENAME: " + file.getName());
 		pr.println("FILESIZE: " + fileSize);
 		pr.println("FILELASTMOD: " + url.getLastModified());
 		//System.out.println("Sending file size: " + fileSize);
 		pr.flush();
-		writable.flushSynchronized();//outStream.flush();
+		writable.flush();//outStream.flush();
 		
 		long sent = 0;
 		final double fileSizeD = fileSize + 0.00D;
@@ -208,13 +207,13 @@ public class FileTransfer {
 		byte[] b = new byte[4096];
 		int len;
 		while((len = fis.read(b)) >= 0) {
-			writable.writeSynchronized(b, 0, len);//outStream.write(b, 0, len);
+			writable.write(b, 0, len);//outStream.write(b, 0, len);
 			sent += len;
 			if(progress != null) {
 				progress.setValue(Double.valueOf(sent / fileSizeD));
 			}
 		}
-		writable.flushSynchronized();//outStream.flush();
+		writable.flush();//outStream.flush();
 		fis.close();
 		if(progress != null) {
 			progress.setValue(Double.valueOf(1.0D));
@@ -259,15 +258,15 @@ public class FileTransfer {
 		return data;
 	}
 	
-	public static interface SynchronizedWritable {
+	public static interface Writable {
 		
-		public PrintWriter getPrintWriterUTF8AutoFlush();
+		public DualPrintWriter getPrintWriterUTF8AutoFlush();
 		
-		public void writeSynchronized(byte[] b) throws IOException;
+		public void write(byte[] b) throws IOException;
 		
-		public void writeSynchronized(byte[] b, int off, int len) throws IOException;
+		public void write(byte[] b, int off, int len) throws IOException;
 		
-		public void flushSynchronized() throws IOException;
+		public void flush() throws IOException;
 		
 	}
 	
